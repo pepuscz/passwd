@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 
-import { exec } from "node:child_process";
+import { execFile, exec } from "node:child_process";
 import { platform } from "node:os";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
 function openBrowser(url: string): void {
-  const cmd = platform() === "darwin" ? "open" : platform() === "win32" ? "start" : "xdg-open";
-  exec(`${cmd} ${JSON.stringify(url)}`, () => {});
+  if (platform() === "win32") {
+    exec(`start "" ${JSON.stringify(url)}`, () => {});
+  } else {
+    const cmd = platform() === "darwin" ? "open" : "xdg-open";
+    execFile(cmd, [url], () => {});
+  }
 }
 
 import {
