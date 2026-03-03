@@ -156,6 +156,7 @@ CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
 - ALWAYS confirm with user before deleting secrets
 - Use --json for all lookups so you get structured data
 - Run CMD create --help or CMD update --help for all options
+- Do NOT show passwords or secrets in chat unless the user explicitly asks
 
 ## Display
 
