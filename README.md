@@ -1,49 +1,38 @@
 # passwd
 
-Cowork plugin + CLI for [passwd.team](https://passwd.team) password manager.
-
-AI-assisted team password management — search, create, share secrets through natural language. Credentials are always redacted from AI context and injected safely via `exec --inject`.
+[passwd.team](https://passwd.team) for AI agents — your agent uses credentials without ever seeing the raw values.
 
 ## What it can do
 
-- **Search & browse** passwords, API keys, SSH keys, payment cards, secure notes
-- **Use credentials safely** via `exec --inject` (agent-blind — secrets never enter AI context)
-- **Create & update** secrets with all field types
-- **Generate TOTP codes** on demand
-- **Share secrets** with groups or individual users, with granular permissions (read, write, autofillOnly, passkeyOnly)
-- **Attach files** to secrets (certificates, configs, etc.)
-- **List groups & contacts** in your workspace for easy sharing
+- **Use credentials safely** — agent finds the right secret, injects it into a command via `exec --inject`; raw values never enter AI context
+- **Pull one-time passwords** — agent gets live TOTP codes from passwd to complete 2FA flows
+- **Manage secrets** — search, create, update, delete, share passwords, API keys, SSH keys, and more
 
 ## Setup
 
 Pick your platform. In all examples below, replace `https://your-deployment.passwd.team` with your passwd.team deployment URL (default is `https://app.passwd.team`).
 
-| Client | Method | Section |
-|---|---|---|
-| Claude Cowork | Plugin (MCP + agent-blind skill) | [Claude Cowork](#claude-cowork) |
-| OpenClaw | Exec secrets provider + CLI skill | [OpenClaw](#openclaw) |
-| Terminal / scripts / CI | CLI directly | [CLI](#cli) |
+| Platform | Section |
+|---|---|
+| Claude Cowork | [Claude Cowork](#claude-cowork) |
+| OpenClaw | [OpenClaw](#openclaw) |
+| Terminal / scripts / CI | [CLI](#cli) |
 
 ### Claude Cowork
 
-Install the passwd plugin to get redacted MCP tools, an agent-blind skill, and the `/passwd:use-credential` command.
+Install the plugin. The agent can find and use credentials from your passwd.team vault — credentials are redacted in all responses and injected into commands via `exec --inject`.
 
 **1. Install the plugin** — in Cowork, go to **Plugins** and add this repository's `packages/passwd-plugin` directory, or copy it into your workspace plugins.
 
 **2. Set your deployment URL** — edit `packages/passwd-plugin/.mcp.json` and replace `https://your-deployment.passwd.team` with your passwd.team URL (default is `https://app.passwd.team`).
 
-**3. Restart Cowork** so the plugin is discovered.
-
-The plugin provides:
-- **MCP tools** — all passwd operations (search, create, update, delete, share, TOTP). Credential fields are automatically redacted (`••••••••`).
-- **Skill** — teaches the agent to use `exec --inject` for credential injection instead of reading raw values.
-- **`/passwd:use-credential`** — guided flow to inject a credential into any command.
+**3. Restart Cowork.**
 
 For multiple deployments, add separate MCP server entries in `.mcp.json` with different names and `PASSWD_ORIGIN` values.
 
 ### OpenClaw
 
-passwd integrates with [OpenClaw](https://openclaw.ai) as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) — credentials are resolved at gateway startup and never reach the agent context. An optional CLI skill lets the agent manage secrets (search, create, update, delete, share) without exposing credential values.
+passwd integrates with [OpenClaw](https://openclaw.ai) as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) — credentials are resolved at gateway startup and never reach the agent context. A CLI skill lets the agent find and use credentials via `exec --inject` and manage secrets.
 
 **1. Set your deployment URL** in `~/.openclaw/.env` and authenticate (one-time — tokens cached in `~/.passwd/`):
 
@@ -88,7 +77,7 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.3.
 
 Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.3.0 list` to find them.
 
-**4. (Optional) Add management skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
+**4. Add the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
 
 ````markdown
 ---
