@@ -49,4 +49,5 @@ export {
   listGroups,
   listContacts,
   getCurrentUser,
+  redactSecret,
 } from "./api.js";

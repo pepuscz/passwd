@@ -189,6 +189,20 @@ export async function listContacts(): Promise<ContactInfo[]> {
   return data.data;
 }
 
+// --- Redaction ---
+
+const SENSITIVE_FIELDS = ["password", "cardNumber", "cvvCode", "credentials", "privateKey", "secureNote", "TOTP"];
+
+export function redactSecret(secret: Secret): Partial<Secret> {
+  const redacted = { ...secret } as Record<string, unknown>;
+  for (const field of SENSITIVE_FIELDS) {
+    if (field in redacted && redacted[field] != null) {
+      redacted[field] = "••••••••";
+    }
+  }
+  return redacted as Partial<Secret>;
+}
+
 // --- User ---
 
 export async function getCurrentUser(): Promise<UserProfile> {

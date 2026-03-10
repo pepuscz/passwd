@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name("passwd")
   .description("CLI for passwd.team password manager")
-  .version("1.1.0")
+  .version("1.2.0")
   .enablePositionalOptions()
   .option("--env <name>", "Target a specific environment (substring match against known origins)");
 
@@ -155,6 +155,7 @@ program
   .command("exec")
   .description("Run a command with secrets injected as environment variables")
   .option("--inject <mapping...>", "VAR=SECRET_ID:FIELD (repeatable)")
+  .option("--no-masking", "Disable stdout masking of secret values")
   .argument("[args...]", "Command to execute (after --)")
   .passThroughOptions()
   .action((args, opts) => {

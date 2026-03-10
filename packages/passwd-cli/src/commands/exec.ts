@@ -3,7 +3,7 @@ import { getSecret } from "@passwd/passwd-lib";
 
 export async function execCommand(
   args: string[],
-  opts: { inject?: string[] },
+  opts: { inject?: string[]; noMasking?: boolean },
 ): Promise<void> {
   if (!args.length) {
     console.error("Usage: passwd exec --inject VAR=SECRET_ID:FIELD -- command [args...]");
@@ -47,11 +47,26 @@ export async function execCommand(
     env[varName] = value;
   }
 
+  const secretValues = resolved.map((r) => r.value).filter((v) => v.length > 0);
+
   const [cmd, ...cmdArgs] = args;
   const child = spawn(cmd, cmdArgs, {
     env,
-    stdio: "inherit",
+    stdio: opts.noMasking ? "inherit" : ["inherit", "pipe", "pipe"],
   });
+
+  if (!opts.noMasking) {
+    const mask = (chunk: Buffer): Buffer => {
+      let str = chunk.toString();
+      for (const v of secretValues) {
+        str = str.replaceAll(v, "<concealed by passwd>");
+      }
+      return Buffer.from(str);
+    };
+
+    child.stdout?.on("data", (chunk: Buffer) => process.stdout.write(mask(chunk)));
+    child.stderr?.on("data", (chunk: Buffer) => process.stderr.write(mask(chunk)));
+  }
 
   child.on("close", (code) => {
     process.exitCode = code ?? 1;

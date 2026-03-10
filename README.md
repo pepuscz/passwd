@@ -2,7 +2,7 @@
 
 MCP server + CLI for [passwd.team](https://passwd.team) password manager.
 
-Gives your AI assistant full access to your team's passwords, TOTP codes, secure notes, and file attachments — create, read, update, delete, and share secrets through natural language.
+Gives your AI assistant access to your team's secrets — manage passwords, TOTP codes, secure notes, and file attachments through natural language.
 
 ## What it can do
 
@@ -26,8 +26,7 @@ In all examples below, replace `https://your-deployment.passwd.team` with your p
 | Claude Code | MCP server | [Claude Code](#claude-code) |
 | Claude Desktop / Cowork | MCP server | [Claude Desktop / Cowork](#claude-desktop--cowork) |
 | Cursor / Windsurf | MCP server | [Cursor / Windsurf](#cursor--windsurf) |
-| OpenClaw | CLI workspace skill | [OpenClaw](#openclaw) |
-| OpenClaw (secrets provider) | Exec provider for SecretRefs | [Secrets provider](#secrets-provider) |
+| OpenClaw | Exec secrets provider + CLI skill | [OpenClaw](#openclaw) |
 | Terminal / scripts / CI | CLI directly | [CLI](#cli) |
 
 ### Claude Code
@@ -35,7 +34,7 @@ In all examples below, replace `https://your-deployment.passwd.team` with your p
 ```bash
 claude mcp add passwd-mcp \
   -e PASSWD_ORIGIN=https://your-deployment.passwd.team \
-  -- npx -y @passwd/passwd-mcp@1.1.0
+  -- npx -y @passwd/passwd-mcp@1.2.0
 ```
 
 Restart Claude Code and verify with `/mcp`. For multiple deployments, add separate MCP servers with different names and `PASSWD_ORIGIN` values.
@@ -49,7 +48,7 @@ Open **Settings → Developer → Edit Config** (`~/Library/Application Support/
   "mcpServers": {
     "passwd-mcp": {
       "command": "npx",
-      "args": ["-y", "@passwd/passwd-mcp@1.1.0"],
+      "args": ["-y", "@passwd/passwd-mcp@1.2.0"],
       "env": {
         "PASSWD_ORIGIN": "https://your-deployment.passwd.team"
       }
@@ -69,7 +68,7 @@ Add to your project's `.cursor/mcp.json` or `.windsurf/mcp.json`:
   "mcpServers": {
     "passwd-mcp": {
       "command": "npx",
-      "args": ["-y", "@passwd/passwd-mcp@1.1.0"],
+      "args": ["-y", "@passwd/passwd-mcp@1.2.0"],
       "env": {
         "PASSWD_ORIGIN": "https://your-deployment.passwd.team"
       }
@@ -82,110 +81,15 @@ For multiple deployments, add separate entries with different `PASSWD_ORIGIN` va
 
 ### OpenClaw
 
-Integrates as a [workspace skill](https://docs.openclaw.ai/tools/skills) using passwd-cli via `exec`. No plugins required.
+passwd integrates with [OpenClaw](https://openclaw.ai) as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) — credentials are resolved at gateway startup and never reach the agent context. An optional CLI skill lets the agent manage secrets (search, create, update, delete, share) without exposing credential values.
 
-**1. Set your deployment URL** in `~/.openclaw/.env`:
-
-```
-PASSWD_ORIGIN=https://your-deployment.passwd.team
-```
-
-**2. Authenticate** (one-time — tokens cached in `~/.passwd/`):
+**1. Set your deployment URL** in `~/.openclaw/.env` and authenticate (one-time — tokens cached in `~/.passwd/`):
 
 ```bash
-npx -y @passwd/passwd-cli@1.1.0 login
+PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.2.0 login
 ```
 
-**3. Create the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
-
-````markdown
----
-name: passwd
-description: "Team password manager (passwd.team). Search, create, update, delete, and share passwords, API keys, SSH keys, payment cards, TOTP codes, and secure notes."
-metadata:
-  {
-    "openclaw":
-      {
-        "emoji": "🔑",
-        "requires": { "env": ["PASSWD_ORIGIN"], "bins": ["npx"] },
-      },
-  }
----
-
-# passwd
-
-Manage team secrets via exec. Always use `--json` for structured output.
-
-CMD: `npx -y @passwd/passwd-cli@1.1.0`
-
-## Commands
-
-Search:    CMD list -q "search term" --json
-Get:       CMD get SECRET_ID --json
-Password:  CMD get SECRET_ID --field password
-TOTP code: CMD totp SECRET_ID
-Create:    CMD create -t TYPE -n "Name" [-u user] [-p pass] [-w url] [--note text] [--tags t1 t2]
-Update:    CMD update SECRET_ID [-n name] [-p pass] [--note text] ...
-Delete:    CMD delete SECRET_ID -y
-Share:     CMD share SECRET_ID --json
-Unshare:   CMD share SECRET_ID --revoke
-Groups:    CMD groups --json
-Contacts:  CMD contacts --json
-Whoami:    CMD whoami --json
-Envs:      CMD envs --json
-
-Types: password, apiCredentials, databaseCredentials, sshKey, paymentCard, secureNote
-
-## Sharing
-
-To share a secret with a group or user, first look up the ID:
-1. CMD groups --json  OR  CMD contacts --json
-2. CMD create ... --group GROUP_ID:read,write  OR  --user USER_ID:read
-Permissions: read, write, autofillOnly, passkeyOnly
-
-## Run with injected secrets
-
-First find the secret ID with `CMD list`, then inject its field as an env var:
-CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
-
-## Rules
-
-- ALWAYS confirm with user before deleting secrets
-- Use --json for all lookups so you get structured data
-- Run CMD create --help or CMD update --help for all options
-- Do NOT show passwords or secrets in chat unless the user explicitly asks
-
-## Multi-environment
-
-Use --env NAME with any command to target a specific passwd.team deployment:
-CMD list -q "search" --json --env acme
-CMD envs --json
-
-## Display
-
-- Never use tables or code blocks
-- Bold label, backtick value: **Username:** `value`
-- End credential output with 🔐
-- One field per line, skip empty fields
-- Lists: name and type only
-- TOTP: code and remaining seconds only
-````
-
-**4. Restart the gateway** so the skill is discovered on the next session.
-
-For multiple deployments, log in to each origin separately (`PASSWD_ORIGIN=... passwd login`). The agent can then switch with `--env` — see the Multi-environment section in the skill above.
-
-### Secrets provider
-
-Use passwd as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) so OpenClaw can resolve API keys from passwd.team at startup — no plaintext secrets in config.
-
-**1. Authenticate** (same as above if already done):
-
-```bash
-PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.1.0 login
-```
-
-**2. Add the provider** to `gateway.config.json5`:
+**2. Add the secrets provider** to `gateway.config.json5`:
 
 ```json5
 {
@@ -194,7 +98,7 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.1.
       passwd: {
         source: "exec",
         command: "/usr/local/bin/npx",          // absolute path to npx
-        args: ["-y", "@passwd/passwd-cli@1.1.0", "resolve"],
+        args: ["-y", "@passwd/passwd-cli@1.2.0", "resolve"],
         passEnv: ["PASSWD_ORIGIN", "HOME"],
         allowSymlinkCommand: true,              // needed if npx is a symlink (Homebrew)
         trustedDirs: ["/usr/local", "/opt/homebrew"],
@@ -220,23 +124,102 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.1.
 }
 ```
 
-Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.1.0 list` to find them.
+Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.2.0 list` to find them.
+
+**4. (Optional) Add management skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
+
+````markdown
+---
+name: passwd
+description: "Manage team secrets — search, create, update, delete, share. Credentials are never exposed in chat."
+metadata:
+  {
+    "openclaw":
+      {
+        "emoji": "🔑",
+        "requires": { "env": ["PASSWD_ORIGIN"], "bins": ["npx"] },
+      },
+  }
+---
+
+# passwd
+
+Manage team secrets via exec. Always use `--json` for structured output.
+
+CMD: `npx -y @passwd/passwd-cli@1.2.0`
+
+## Commands
+
+Search:    CMD list -q "search term" --json
+Info:      CMD get SECRET_ID --json
+TOTP code: CMD totp SECRET_ID
+Create:    CMD create -t TYPE -n "Name" [-u user] [-p pass] [-w url] [--note text] [--tags t1 t2]
+Update:    CMD update SECRET_ID [-n name] [-p pass] [--note text] ...
+Delete:    CMD delete SECRET_ID -y
+Share:     CMD share SECRET_ID --json
+Unshare:   CMD share SECRET_ID --revoke
+Groups:    CMD groups --json
+Contacts:  CMD contacts --json
+Whoami:    CMD whoami --json
+Envs:      CMD envs --json
+
+Types: password, apiCredentials, databaseCredentials, sshKey, paymentCard, secureNote
+
+## Use credentials
+
+NEVER read credentials directly. Inject them as env vars:
+CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
+The secret value goes directly to the subprocess — the agent never sees it.
+Secret values in stdout are automatically masked: `<concealed by passwd>`
+
+## Sharing
+
+To share a secret with a group or user, first look up the ID:
+1. CMD groups --json  OR  CMD contacts --json
+2. CMD create ... --group GROUP_ID:read,write  OR  --user USER_ID:read
+Permissions: read, write, autofillOnly, passkeyOnly
+
+## Rules
+
+- NEVER use --field to read credential values — use exec --inject instead
+- Use --json for all lookups
+- ALWAYS confirm with user before deleting secrets
+
+## Multi-environment
+
+Use --env NAME with any command to target a specific passwd.team deployment:
+CMD list -q "search" --json --env acme
+CMD envs --json
+
+## Display
+
+- Never use tables or code blocks
+- Bold label, backtick value: **Username:** `value`
+- End credential output with 🔐
+- One field per line, skip empty fields
+- Lists: name and type only
+- TOTP: code and remaining seconds only
+````
+
+**5. Restart the gateway** so the skill and provider are discovered.
+
+For multiple deployments, log in to each origin separately (`PASSWD_ORIGIN=... npx @passwd/passwd-cli@1.2.0 login`). The agent can then switch with `--env` — see the Multi-environment section in the skill above.
 
 ### CLI
 
 ```bash
 export PASSWD_ORIGIN=https://your-deployment.passwd.team
-npx @passwd/passwd-cli@1.1.0 login
-npx @passwd/passwd-cli@1.1.0 list
-npx @passwd/passwd-cli@1.1.0 --help
+npx @passwd/passwd-cli@1.2.0 login
+npx @passwd/passwd-cli@1.2.0 list
+npx @passwd/passwd-cli@1.2.0 --help
 ```
 
 For multiple deployments, log in to each origin separately, then use `--env` to switch:
 
 ```bash
-PASSWD_ORIGIN=https://acme.passwd.team npx @passwd/passwd-cli@1.1.0 login
-PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.1.0 login
-npx @passwd/passwd-cli@1.1.0 list --env acme
+PASSWD_ORIGIN=https://acme.passwd.team npx @passwd/passwd-cli@1.2.0 login
+PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.2.0 login
+npx @passwd/passwd-cli@1.2.0 list --env acme
 ```
 
 ### Building from source

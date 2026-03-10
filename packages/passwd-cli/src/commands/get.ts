@@ -1,4 +1,4 @@
-import { getSecret } from "@passwd/passwd-lib";
+import { getSecret, redactSecret } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 
 export async function getCommand(
@@ -8,6 +8,7 @@ export async function getCommand(
   const secret = await getSecret(id);
 
   if (opts.field) {
+    // Explicit field extraction — raw value for piping (like op read)
     const value = (secret as unknown as Record<string, unknown>)[opts.field];
     if (value === undefined) {
       process.stderr.write(`Field '${opts.field}' not found\n`);
@@ -19,9 +20,6 @@ export async function getCommand(
     return;
   }
 
-  if (opts.json) {
-    console.log(formatJson(secret));
-  } else {
-    console.log(formatJson(secret));
-  }
+  // Default: redacted (agent-safe)
+  console.log(formatJson(redactSecret(secret)));
 }
