@@ -15,7 +15,7 @@ Gives your AI assistant full access to your team's passwords, TOTP codes, secure
 
 ## Install
 
-No build step needed — `npx` downloads and runs the package automatically from [npm](https://www.npmjs.com/org/pepuscz).
+No build step needed — `npx` downloads and runs the package automatically from [npm](https://www.npmjs.com/org/passwd).
 
 ## Setup
 
