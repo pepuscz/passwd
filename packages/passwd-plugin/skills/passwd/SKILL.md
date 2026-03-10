@@ -5,7 +5,7 @@ Find and use credentials from your team's passwd.team vault. Credentials are nev
 ## MCP tools
 
 - `list_secrets` — search and browse secrets (filter by query, type; paginate)
-- `get_secret` — view secret details (credentials are **redacted** — you will see `••••••••`)
+- `get_secret` — view secret details (credential fields show `••••••••`)
 - `get_totp_code` — get current TOTP code for 2FA flows
 - `get_current_user` — check who is authenticated
 
@@ -23,5 +23,4 @@ Use `/passwd:use-credential` for guided credential injection.
 
 ## Rules
 
-- NEVER attempt to extract raw credential values — they are redacted for security
 - Manage secrets (create, update, delete, share) in the passwd.team web interface, not in chat
