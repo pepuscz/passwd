@@ -3,6 +3,7 @@ export interface AuthTokens {
   refresh_token?: string;
   expiry_date?: number;
   saved_at?: number;
+  origin?: string;
 }
 
 export interface UserProfile {

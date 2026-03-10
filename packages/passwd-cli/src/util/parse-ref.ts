@@ -1,4 +1,4 @@
-import type { GroupRef, UserRef } from "@pepuscz/passwd-lib";
+import type { GroupRef, UserRef } from "@passwd/passwd-lib";
 
 /**
  * Parse a CLI flag value like "ID:read,write" into a ref object.

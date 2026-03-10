@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-import { deleteSecret } from "@pepuscz/passwd-lib";
+import { deleteSecret } from "@passwd/passwd-lib";
 
 export async function deleteCommand(
   id: string,

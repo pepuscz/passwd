@@ -1,4 +1,4 @@
-import type { SecretListItem } from "@pepuscz/passwd-lib";
+import type { SecretListItem } from "@passwd/passwd-lib";
 
 export function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

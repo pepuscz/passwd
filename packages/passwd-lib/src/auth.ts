@@ -203,12 +203,23 @@ export async function refreshToken(tokens: AuthTokens): Promise<AuthTokens> {
 
 async function saveTokens(tokens: AuthTokens): Promise<void> {
   const tokenFile = getTokenFile();
+  const data = { ...tokens, origin: getOrigin() };
   await mkdir(TOKEN_DIR, { recursive: true, mode: 0o700 });
-  await writeFile(tokenFile, JSON.stringify(tokens, null, 2), {
+  await writeFile(tokenFile, JSON.stringify(data, null, 2), {
     encoding: "utf-8",
     mode: 0o600,
   });
   await chmod(tokenFile, 0o600);
+}
+
+export function resetDiscoveryCache(): void {
+  _discoveredApiUrl = null;
+  _discoveredClientId = null;
+  _discoveryDone = false;
+}
+
+export function getTokenDir(): string {
+  return TOKEN_DIR;
 }
 
 export async function loadTokens(): Promise<AuthTokens | null> {

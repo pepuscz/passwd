@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { createSecret } from "@pepuscz/passwd-lib";
-import type { SecretType } from "@pepuscz/passwd-lib";
+import { createSecret } from "@passwd/passwd-lib";
+import type { SecretType } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 import { parseRefFlag } from "../util/parse-ref.js";
 

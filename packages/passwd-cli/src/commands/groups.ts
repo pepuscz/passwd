@@ -1,4 +1,4 @@
-import { listGroups } from "@pepuscz/passwd-lib";
+import { listGroups } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 
 export async function groupsCommand(opts: { json?: boolean }): Promise<void> {

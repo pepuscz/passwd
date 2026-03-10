@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { updateSecret } from "@pepuscz/passwd-lib";
+import { updateSecret } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 import { parseRefFlag } from "../util/parse-ref.js";
 

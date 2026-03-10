@@ -5,3 +5,5 @@ dist/
 .env
 .mcp.json
 .claude/
+SECURITY.md
+*.tgz

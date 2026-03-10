@@ -1,4 +1,4 @@
-import { listSecrets } from "@pepuscz/passwd-lib";
+import { listSecrets } from "@passwd/passwd-lib";
 import { formatJson, formatSecretRow } from "../util/format.js";
 
 export async function listCommand(opts: {

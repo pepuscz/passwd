@@ -15,14 +15,7 @@ Gives your AI assistant full access to your team's passwords, TOTP codes, secure
 
 ## Install
 
-No build step needed — `npx` downloads and runs the package automatically. Packages are hosted on [GitHub Packages](https://github.com/pepuscz/passwd/packages), which requires authentication even for installs.
-
-**One-time setup:** create a GitHub [personal access token](https://github.com/settings/tokens) with `read:packages` scope, then add to `~/.npmrc`:
-
-```
-//npm.pkg.github.com/:_authToken=ghp_YOUR_TOKEN_HERE
-@pepuscz:registry=https://npm.pkg.github.com
-```
+No build step needed — `npx` downloads and runs the package automatically from [npm](https://www.npmjs.com/org/pepuscz).
 
 ## Setup
 
@@ -34,6 +27,7 @@ In all examples below, replace `https://your-company.passwd.team` with your pass
 | Claude Desktop / Cowork | MCP server | [Claude Desktop / Cowork](#claude-desktop--cowork) |
 | Cursor / Windsurf | MCP server | [Cursor / Windsurf](#cursor--windsurf) |
 | OpenClaw | CLI workspace skill | [OpenClaw](#openclaw) |
+| OpenClaw (secrets provider) | Exec provider for SecretRefs | [Secrets provider](#secrets-provider-optional) |
 | Terminal / scripts / CI | CLI directly | [CLI](#cli) |
 
 ### Claude Code
@@ -41,7 +35,7 @@ In all examples below, replace `https://your-company.passwd.team` with your pass
 ```bash
 claude mcp add passwd-mcp \
   -e PASSWD_ORIGIN=https://your-company.passwd.team \
-  -- npx -y @pepuscz/passwd-mcp@1.0.6
+  -- npx -y @passwd/passwd-mcp@1.1.0
 ```
 
 Restart Claude Code and verify with `/mcp`.
@@ -55,7 +49,7 @@ Open **Settings → Developer → Edit Config** (`~/Library/Application Support/
   "mcpServers": {
     "passwd-mcp": {
       "command": "npx",
-      "args": ["-y", "@pepuscz/passwd-mcp@1.0.6"],
+      "args": ["-y", "@passwd/passwd-mcp@1.1.0"],
       "env": {
         "PASSWD_ORIGIN": "https://your-company.passwd.team"
       }
@@ -75,7 +69,7 @@ Add to your project's `.cursor/mcp.json` or `.windsurf/mcp.json`:
   "mcpServers": {
     "passwd-mcp": {
       "command": "npx",
-      "args": ["-y", "@pepuscz/passwd-mcp@1.0.6"],
+      "args": ["-y", "@passwd/passwd-mcp@1.1.0"],
       "env": {
         "PASSWD_ORIGIN": "https://your-company.passwd.team"
       }
@@ -94,10 +88,10 @@ Integrates as a [workspace skill](https://docs.openclaw.ai/tools/skills) using p
 PASSWD_ORIGIN=https://your-company.passwd.team
 ```
 
-**2. Authenticate** (one-time — tokens cached at `~/.passwd/tokens.json`):
+**2. Authenticate** (one-time — tokens cached in `~/.passwd/`):
 
 ```bash
-npx -y @pepuscz/passwd-cli@1.0.6 login
+npx -y @passwd/passwd-cli@1.1.0 login
 ```
 
 **3. Create the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
@@ -120,7 +114,7 @@ metadata:
 
 Manage team secrets via exec. Always use `--json` for structured output.
 
-CMD: `npx -y @pepuscz/passwd-cli@1.0.6`
+CMD: `npx -y @passwd/passwd-cli@1.1.0`
 
 ## Commands
 
@@ -136,6 +130,7 @@ Unshare:   CMD share SECRET_ID --revoke
 Groups:    CMD groups --json
 Contacts:  CMD contacts --json
 Whoami:    CMD whoami --json
+Envs:      CMD envs --json
 
 Types: password, apiCredentials, databaseCredentials, sshKey, paymentCard, secureNote
 
@@ -158,6 +153,12 @@ CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
 - Run CMD create --help or CMD update --help for all options
 - Do NOT show passwords or secrets in chat unless the user explicitly asks
 
+## Multi-environment
+
+Use --env NAME with any command to target a specific passwd.team deployment:
+CMD list -q "search" --json --env prod
+CMD envs --json
+
 ## Display
 
 - Never use tables or code blocks
@@ -170,13 +171,30 @@ CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
 
 **4. Restart the gateway** so the skill is discovered on the next session.
 
+#### Secrets provider (optional)
+
+Use passwd as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) to inject passwd.team credentials into model provider configs without exposing them in plaintext.
+
+```bash
+openclaw secrets configure
+# Select provider type: exec
+# Command: /path/to/npx (or node packages/passwd-cli/dist/index.js)
+# Args: -y @passwd/passwd-cli@1.1.0 resolve
+# passEnv: PASSWD_ORIGIN, HOME
+```
+
+SecretRef format — the id is `SECRET_ID:field` (field defaults to `password`):
+```json
+"apiKey": {"source": "exec", "provider": "passwd", "id": "abc123:password"}
+```
+
 ### CLI
 
 ```bash
 export PASSWD_ORIGIN=https://your-company.passwd.team
-npx @pepuscz/passwd-cli@1.0.6 login
-npx @pepuscz/passwd-cli@1.0.6 list
-npx @pepuscz/passwd-cli@1.0.6 --help
+npx @passwd/passwd-cli@1.1.0 login
+npx @passwd/passwd-cli@1.1.0 list
+npx @passwd/passwd-cli@1.1.0 --help
 ```
 
 ### Building from source
@@ -195,7 +213,7 @@ Check [releases](https://github.com/pepuscz/passwd/releases) for new versions, t
 
 ## Authentication
 
-Google OAuth2. On first use, the `passwd_login` tool (MCP) or `passwd login` (CLI) will guide you through authentication. Tokens are cached at `~/.passwd/tokens.json` and auto-refresh.
+Google OAuth2. On first use, the `passwd_login` tool (MCP) or `passwd login` (CLI) will guide you through authentication. Tokens are cached per-environment in `~/.passwd/` and auto-refresh.
 
 Set `PASSWD_ACCESS_TOKEN` env var to skip OAuth entirely.
 
@@ -230,7 +248,9 @@ Set `PASSWD_ACCESS_TOKEN` env var to skip OAuth entirely.
 | `passwd share <id>` | Enable/revoke sharing (`--revoke`) |
 | `passwd groups` | List workspace groups |
 | `passwd contacts` | List workspace contacts |
+| `passwd envs` | List known environments (`--json`) |
 | `passwd exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`) |
+| `passwd --env <name>` | Global flag: target a specific environment by name substring |
 
 ## Configuration
 

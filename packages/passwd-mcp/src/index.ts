@@ -31,11 +31,11 @@ import {
   listGroups,
   listContacts,
   getCurrentUser,
-} from "@pepuscz/passwd-lib";
+} from "@passwd/passwd-lib";
 
 const server = new McpServer({
   name: "passwd-mcp",
-  version: "1.0.6",
+  version: "1.1.0",
 });
 
 // --- Tool 1: passwd_login ---

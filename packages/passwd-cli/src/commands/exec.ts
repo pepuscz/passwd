@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { getSecret } from "@pepuscz/passwd-lib";
+import { getSecret } from "@passwd/passwd-lib";
 
 export async function execCommand(
   args: string[],

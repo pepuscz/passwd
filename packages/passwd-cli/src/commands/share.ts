@@ -1,4 +1,4 @@
-import { enableSharing, revokeSharing } from "@pepuscz/passwd-lib";
+import { enableSharing, revokeSharing } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 
 export async function shareCommand(

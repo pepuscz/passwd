@@ -13,15 +13,29 @@ import { shareCommand } from "./commands/share.js";
 import { execCommand } from "./commands/exec.js";
 import { groupsCommand } from "./commands/groups.js";
 import { contactsCommand } from "./commands/contacts.js";
+import { envsCommand } from "./commands/envs.js";
+import { resolveCommand } from "./commands/resolve.js";
 import { formatError } from "./util/format.js";
+import { resolveEnv } from "./util/envs.js";
+import { resetDiscoveryCache, getTokenDir } from "@passwd/passwd-lib";
 
 const program = new Command();
 
 program
   .name("passwd")
   .description("CLI for passwd.team password manager")
-  .version("1.0.0")
-  .enablePositionalOptions();
+  .version("1.1.0")
+  .enablePositionalOptions()
+  .option("--env <name>", "Target a specific environment (substring match against known origins)");
+
+program.hook("preAction", async (thisCommand) => {
+  const envName = thisCommand.opts().env as string | undefined;
+  if (envName) {
+    const origin = await resolveEnv(envName, getTokenDir());
+    process.env.PASSWD_ORIGIN = origin;
+    resetDiscoveryCache();
+  }
+});
 
 program
   .command("login")
@@ -125,6 +139,17 @@ program
   .description("List available contacts")
   .option("--json", "Output as JSON")
   .action((opts) => contactsCommand(opts).catch(die));
+
+program
+  .command("envs")
+  .description("List known environments")
+  .option("--json", "Output as JSON")
+  .action((opts) => envsCommand(opts).catch(die));
+
+program
+  .command("resolve", { hidden: true })
+  .description("Resolve secrets for exec secrets provider (reads JSON from stdin)")
+  .action(() => resolveCommand().catch(die));
 
 program
   .command("exec")

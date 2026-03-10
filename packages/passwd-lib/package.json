@@ -1,6 +1,6 @@
 {
-  "name": "@pepuscz/passwd-lib",
-  "version": "1.0.6",
+  "name": "@passwd/passwd-lib",
+  "version": "1.1.0",
   "description": "Core library for passwd.team — auth, API client, and types",
   "type": "module",
   "main": "dist/index.js",
@@ -29,6 +29,6 @@
     "directory": "packages/passwd-lib"
   },
   "publishConfig": {
-    "@pepuscz:registry": "https://npm.pkg.github.com"
+    "access": "public"
   }
 }

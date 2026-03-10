@@ -31,6 +31,8 @@ export {
   refreshToken,
   loadTokens,
   getAccessToken,
+  resetDiscoveryCache,
+  getTokenDir,
 } from "./auth.js";
 
 export type { ListSecretsParams, ListSecretsResult } from "./api.js";
