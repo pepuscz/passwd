@@ -25,9 +25,9 @@ Pick your platform. In all examples below, replace `https://your-deployment.pass
 
 ### Claude Cowork
 
-Install the plugin. The agent can find and use credentials from your passwd.team vault — raw values never enter the AI context.
+The agent can find and use credentials from your passwd.team vault — raw values never enter the AI context.
 
-**1. Install the plugin** — in Cowork, go to **Plugins** and add this repository's `packages/passwd-plugin` directory, or copy it into your workspace plugins.
+**1. Install the plugin** — in Cowork, go to **Plugins** and add [`packages/passwd-plugin`](https://github.com/pepuscz/passwd/tree/main/packages/passwd-plugin) from this repository.
 
 **2. Set your deployment URL** — edit `packages/passwd-plugin/.mcp.json` and replace `https://your-deployment.passwd.team` with your passwd.team URL (default is `https://app.passwd.team`).
 
