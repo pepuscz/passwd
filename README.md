@@ -33,7 +33,7 @@ The agent can find and use credentials from your passwd.team vault — raw value
 
 **3. Restart Cowork.**
 
-The MCP server is read-only (no create, update, delete, or share) and credential fields are replaced with `••••••••` at the code level. The agent CLI (`@passwd/passwd-agent-cli`) has no command that outputs raw credential values, so credential exposure is structurally prevented, not just policy-based. Cowork plugins share the same sandbox, so only install plugins you trust — the same principle applies to any tool that handles credentials.
+Neither the MCP server nor the agent CLI can output raw credential values — exposure is structurally prevented, not just policy-based.
 
 For multiple deployments, add separate MCP server entries in `.mcp.json` with different names and `PASSWD_ORIGIN` values.
 
