@@ -171,7 +171,7 @@ CMD envs --json
 
 **4. Restart the gateway** so the skill is discovered on the next session.
 
-#### Secrets provider (optional)
+### Secrets provider (optional)
 
 Use passwd as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) to inject passwd.team credentials into model provider configs without exposing them in plaintext.
 
