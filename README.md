@@ -58,7 +58,7 @@ Open **Settings → Developer → Edit Config** (`~/Library/Application Support/
 }
 ```
 
-Restart Claude Desktop. For multiple deployments, add separate entries (e.g. `passwd-prod`, `passwd-staging`) with different `PASSWD_ORIGIN` values.
+Restart Claude Desktop. For multiple deployments, add separate entries (e.g. `passwd-acme`, `passwd-initech`) with different `PASSWD_ORIGIN` values.
 
 ### Cursor / Windsurf
 
@@ -204,9 +204,9 @@ npx @passwd/passwd-cli@1.1.0 --help
 For multiple deployments, log in to each origin separately, then use `--env` to switch:
 
 ```bash
-PASSWD_ORIGIN=https://prod.passwd.team npx @passwd/passwd-cli@1.1.0 login
-PASSWD_ORIGIN=https://staging.passwd.team npx @passwd/passwd-cli@1.1.0 login
-npx @passwd/passwd-cli@1.1.0 list --env prod
+PASSWD_ORIGIN=https://acme.passwd.team npx @passwd/passwd-cli@1.1.0 login
+PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.1.0 login
+npx @passwd/passwd-cli@1.1.0 list --env acme
 ```
 
 ### Building from source
