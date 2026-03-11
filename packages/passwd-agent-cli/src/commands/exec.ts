@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { getSecret } from "@passwd/passwd-lib";
+import { parseInjection } from "../util/parse-injection.js";
 
 export async function execCommand(
   args: string[],
@@ -20,18 +21,7 @@ export async function execCommand(
 
   // Parse and fetch all injections in parallel
   const tasks = injections.map(async (spec) => {
-    const eqIdx = spec.indexOf("=");
-    if (eqIdx === -1) {
-      throw new Error(`Invalid --inject format: '${spec}'. Expected VAR=SECRET_ID:FIELD`);
-    }
-    const varName = spec.slice(0, eqIdx);
-    const rest = spec.slice(eqIdx + 1);
-    const colonIdx = rest.indexOf(":");
-    if (colonIdx === -1) {
-      throw new Error(`Invalid --inject format: '${spec}'. Expected VAR=SECRET_ID:FIELD`);
-    }
-    const secretId = rest.slice(0, colonIdx);
-    const field = rest.slice(colonIdx + 1);
+    const { varName, secretId, field } = parseInjection(spec);
 
     const secret = await getSecret(secretId);
     const value = (secret as unknown as Record<string, unknown>)[field];

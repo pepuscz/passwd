@@ -4,6 +4,7 @@ import { updateSecret } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 import { parseRefFlag } from "../util/parse-ref.js";
 import { guessMime } from "../util/mime.js";
+import { resolveStdin } from "../util/stdin.js";
 
 export async function updateCommand(
   id: string,
@@ -39,7 +40,7 @@ export async function updateCommand(
 
   if (opts.name !== undefined) updates.name = opts.name;
   if (opts.username !== undefined) updates.username = opts.username;
-  if (opts.password !== undefined) updates.password = opts.password;
+  if (opts.password !== undefined) updates.password = resolveStdin(opts.password);
   if (opts.web !== undefined) updates.web = opts.web;
   if (opts.note !== undefined) updates.note = opts.note;
   if (opts.tags !== undefined) updates.tags = opts.tags;
@@ -59,13 +60,13 @@ export async function updateCommand(
     updates.file = { name, data: `data:${mime};base64,${buf.toString("base64")}` };
   }
   if (opts.visibleToAll !== undefined) updates.visibleToAll = opts.visibleToAll;
-  if (opts.totp !== undefined) updates.TOTP = opts.totp;
-  if (opts.cardNumber !== undefined) updates.cardNumber = opts.cardNumber;
-  if (opts.cvvCode !== undefined) updates.cvvCode = opts.cvvCode;
-  if (opts.credentials !== undefined) updates.credentials = opts.credentials;
-  if (opts.privateKey !== undefined) updates.privateKey = opts.privateKey;
+  if (opts.totp !== undefined) updates.TOTP = resolveStdin(opts.totp);
+  if (opts.cardNumber !== undefined) updates.cardNumber = resolveStdin(opts.cardNumber);
+  if (opts.cvvCode !== undefined) updates.cvvCode = resolveStdin(opts.cvvCode);
+  if (opts.credentials !== undefined) updates.credentials = resolveStdin(opts.credentials);
+  if (opts.privateKey !== undefined) updates.privateKey = resolveStdin(opts.privateKey);
   if (opts.publicKey !== undefined) updates.publicKey = opts.publicKey;
-  if (opts.secureNote !== undefined) updates.secureNote = opts.secureNote;
+  if (opts.secureNote !== undefined) updates.secureNote = resolveStdin(opts.secureNote);
   if (opts.expirationDate !== undefined) updates.expirationDate = opts.expirationDate;
   if (opts.cardholderName !== undefined) updates.cardholderName = opts.cardholderName;
   if (opts.hostname !== undefined) updates.hostname = opts.hostname;

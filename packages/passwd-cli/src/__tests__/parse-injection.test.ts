@@ -73,4 +73,83 @@ describe("parseInjection", () => {
     assert.equal(result.secretId, "");
     assert.equal(result.field, "field");
   });
+
+  // --- Blocked env var tests ---
+
+  it("blocks LD_PRELOAD", () => {
+    assert.throws(
+      () => parseInjection("LD_PRELOAD=id:field"),
+      { message: /Blocked environment variable.*LD_PRELOAD/ },
+    );
+  });
+
+  it("blocks DYLD_INSERT_LIBRARIES", () => {
+    assert.throws(
+      () => parseInjection("DYLD_INSERT_LIBRARIES=id:field"),
+      { message: /Blocked environment variable.*DYLD_INSERT_LIBRARIES/ },
+    );
+  });
+
+  it("blocks NODE_OPTIONS", () => {
+    assert.throws(
+      () => parseInjection("NODE_OPTIONS=id:field"),
+      { message: /Blocked environment variable.*NODE_OPTIONS/ },
+    );
+  });
+
+  it("blocks PATH", () => {
+    assert.throws(
+      () => parseInjection("PATH=id:field"),
+      { message: /Blocked environment variable.*PATH/ },
+    );
+  });
+
+  it("blocks HOME", () => {
+    assert.throws(
+      () => parseInjection("HOME=id:field"),
+      { message: /Blocked environment variable.*HOME/ },
+    );
+  });
+
+  it("blocks HTTP_PROXY", () => {
+    assert.throws(
+      () => parseInjection("HTTP_PROXY=id:field"),
+      { message: /Blocked environment variable.*HTTP_PROXY/ },
+    );
+  });
+
+  it("blocks https_proxy (lowercase)", () => {
+    assert.throws(
+      () => parseInjection("https_proxy=id:field"),
+      { message: /Blocked environment variable.*https_proxy/ },
+    );
+  });
+
+  it("blocks PASSWD_ORIGIN", () => {
+    assert.throws(
+      () => parseInjection("PASSWD_ORIGIN=id:field"),
+      { message: /Blocked environment variable.*PASSWD_ORIGIN/ },
+    );
+  });
+
+  it("blocks SSL_CERT_FILE", () => {
+    assert.throws(
+      () => parseInjection("SSL_CERT_FILE=id:field"),
+      { message: /Blocked environment variable.*SSL_CERT_FILE/ },
+    );
+  });
+
+  it("blocks BASH_ENV", () => {
+    assert.throws(
+      () => parseInjection("BASH_ENV=id:field"),
+      { message: /Blocked environment variable.*BASH_ENV/ },
+    );
+  });
+
+  it("allows safe variable names", () => {
+    assert.doesNotThrow(() => parseInjection("DB_PASSWORD=id:field"));
+    assert.doesNotThrow(() => parseInjection("API_KEY=id:field"));
+    assert.doesNotThrow(() => parseInjection("MY_SECRET=id:field"));
+    assert.doesNotThrow(() => parseInjection("AWS_ACCESS_KEY_ID=id:field"));
+  });
 });

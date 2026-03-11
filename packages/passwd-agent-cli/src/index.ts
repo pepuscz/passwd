@@ -8,7 +8,6 @@ import { getCommand } from "./commands/get.js";
 import { totpCommand } from "./commands/totp.js";
 import { execCommand } from "./commands/exec.js";
 import { envsCommand } from "./commands/envs.js";
-import { resolveCommand } from "./commands/resolve.js";
 import { formatError } from "./util/format.js";
 import { resetDiscoveryCache, getTokenDir, resolveEnv } from "@passwd/passwd-lib";
 
@@ -78,11 +77,6 @@ program
   .description("List known environments")
   .option("--json", "Output as JSON")
   .action((opts) => envsCommand(opts).catch(die));
-
-program
-  .command("resolve", { hidden: true })
-  .description("Resolve secrets for exec secrets provider (reads JSON from stdin)")
-  .action(() => resolveCommand().catch(die));
 
 function die(err: unknown): void {
   console.error(`Error: ${formatError(err)}`);

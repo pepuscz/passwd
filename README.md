@@ -40,12 +40,21 @@ For multiple deployments, add separate MCP server entries in `.mcp.json` with di
 
 ### OpenClaw
 
-passwd integrates with [OpenClaw](https://openclaw.ai) as an [exec secrets provider](https://docs.openclaw.ai/gateway/secrets) — credentials are resolved at gateway startup and never reach the agent context.
+passwd has two OpenClaw integrations that work independently or together:
 
-**1. Set your deployment URL** and authenticate:
+| Integration | What it does | Package | Agent sees raw credentials? |
+|---|---|---|---|
+| **Secrets provider** | Resolves SecretRefs at gateway startup (API keys, tokens) | `passwd-cli` | No — gateway holds them internally |
+| **Agent skill** | Lets the agent browse vault, check TOTP, inject creds into commands | `passwd-agent-cli` | No — credentials always redacted or masked |
+
+#### Secrets provider (gateway)
+
+Resolve [SecretRefs](https://docs.openclaw.ai/gateway/secrets#secretref-contract) at gateway startup — API keys, service tokens, and other credentials go into the gateway's internal config and never reach the agent.
+
+**1. Authenticate** (the gateway runs `passwd-cli`, not the agent):
 
 ```bash
-PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cli@1.4.2 login
+PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.4.2 login
 ```
 
 **2. Add the secrets provider** to `gateway.config.json5`:
@@ -57,7 +66,7 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cl
       passwd: {
         source: "exec",
         command: "/usr/local/bin/npx",          // absolute path to npx
-        args: ["-y", "@passwd/passwd-agent-cli@1.4.2", "resolve"],
+        args: ["-y", "@passwd/passwd-cli@1.4.2", "resolve"],
         passEnv: ["PASSWD_ORIGIN", "HOME"],
         allowSymlinkCommand: true,              // needed if npx is a symlink (Homebrew)
         trustedDirs: ["/usr/local", "/opt/homebrew"],
@@ -83,9 +92,19 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cl
 }
 ```
 
-Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-agent-cli@1.4.2 list` to find them.
+Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.4.2 list` to find them.
 
-**4. Add the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
+#### Agent skill
+
+Let the agent browse your vault, check TOTP codes, and inject credentials into commands — without ever seeing raw credential values.
+
+**1. Authenticate** with the agent-safe CLI:
+
+```bash
+PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cli@1.4.2 login
+```
+
+**2. Add the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
 
 ````markdown
 ---
@@ -115,6 +134,13 @@ TOTP code: CMD totp SECRET_ID
 Whoami:    CMD whoami --json
 Envs:      CMD envs --json
 
+## Use credentials
+
+Inject a credential into a command without exposing it:
+CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
+
+Multiple secrets: add more `--inject VAR=ID:field` flags.
+
 ## Multi-environment
 
 Use --env NAME with any command to target a specific passwd.team deployment:
@@ -131,7 +157,7 @@ CMD envs --json
 - TOTP: code and remaining seconds only
 ````
 
-**5. Restart the gateway** so the skill and provider are discovered.
+**3. Restart the gateway** so the skill and provider are discovered.
 
 For multiple deployments, log in to each origin separately (`PASSWD_ORIGIN=... npx @passwd/passwd-agent-cli@1.4.2 login`). The agent can then switch with `--env` — see the Multi-environment section in the skill above.
 
@@ -231,7 +257,6 @@ The agent CLI (`@passwd/passwd-agent-cli`, binary `passwd-agent`) is a hardened 
 | `passwd-agent get <id>` | Get a secret (always redacted, no `--field`) |
 | `passwd-agent totp <id>` | Get current TOTP code |
 | `passwd-agent exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`, stdout always masked) |
-| `passwd-agent resolve` | Exec secrets provider — reads secret IDs from stdin, returns values on stdout (used by OpenClaw gateway) |
 | `passwd-agent envs` | List known environments (`--json`) |
 | `passwd-agent --env <name>` | Global flag: target a specific environment by name substring |
 

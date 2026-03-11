@@ -5,6 +5,7 @@ import type { SecretType } from "@passwd/passwd-lib";
 import { formatJson } from "../util/format.js";
 import { parseRefFlag } from "../util/parse-ref.js";
 import { guessMime } from "../util/mime.js";
+import { resolveStdin } from "../util/stdin.js";
 
 export async function createCommand(opts: {
   type: string;
@@ -39,7 +40,7 @@ export async function createCommand(opts: {
   };
 
   if (opts.username !== undefined) payload.username = opts.username;
-  if (opts.password !== undefined) payload.password = opts.password;
+  if (opts.password !== undefined) payload.password = resolveStdin(opts.password);
   if (opts.web !== undefined) payload.web = opts.web;
   if (opts.note !== undefined) payload.note = opts.note;
   if (opts.tags !== undefined) payload.tags = opts.tags;
@@ -57,13 +58,13 @@ export async function createCommand(opts: {
     payload.file = { name, data: `data:${mime};base64,${buf.toString("base64")}` };
   }
   if (opts.visibleToAll !== undefined) payload.visibleToAll = opts.visibleToAll;
-  if (opts.totp !== undefined) payload.TOTP = opts.totp;
-  if (opts.cardNumber !== undefined) payload.cardNumber = opts.cardNumber;
-  if (opts.cvvCode !== undefined) payload.cvvCode = opts.cvvCode;
-  if (opts.credentials !== undefined) payload.credentials = opts.credentials;
-  if (opts.privateKey !== undefined) payload.privateKey = opts.privateKey;
+  if (opts.totp !== undefined) payload.TOTP = resolveStdin(opts.totp);
+  if (opts.cardNumber !== undefined) payload.cardNumber = resolveStdin(opts.cardNumber);
+  if (opts.cvvCode !== undefined) payload.cvvCode = resolveStdin(opts.cvvCode);
+  if (opts.credentials !== undefined) payload.credentials = resolveStdin(opts.credentials);
+  if (opts.privateKey !== undefined) payload.privateKey = resolveStdin(opts.privateKey);
   if (opts.publicKey !== undefined) payload.publicKey = opts.publicKey;
-  if (opts.secureNote !== undefined) payload.secureNote = opts.secureNote;
+  if (opts.secureNote !== undefined) payload.secureNote = resolveStdin(opts.secureNote);
   if (opts.expirationDate !== undefined) payload.expirationDate = opts.expirationDate;
   if (opts.cardholderName !== undefined) payload.cardholderName = opts.cardholderName;
   if (opts.hostname !== undefined) payload.hostname = opts.hostname;
