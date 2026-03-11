@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name("passwd")
   .description("CLI for passwd.team password manager")
-  .version("1.4.3")
+  .version("1.4.4")
   .enablePositionalOptions()
   .option("--env <name>", "Target a specific environment (substring match against known origins)");
 

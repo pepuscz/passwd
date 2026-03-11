@@ -285,14 +285,14 @@ export async function refreshToken(tokens: AuthTokens): Promise<AuthTokens> {
     throw new Error(`Token refresh failed (${response.status}): ${text}`);
   }
 
-  const data = await response.json() as { accessToken: string; expiration: number };
+  const data = await response.json() as { accessToken: string; expiration: number; refreshToken?: string };
   if (!data.accessToken) {
     throw new Error("No accessToken in refresh response");
   }
 
   const refreshed: AuthTokens = {
     access_token: data.accessToken,
-    refresh_token: tokens.refresh_token,
+    refresh_token: data.refreshToken ?? tokens.refresh_token,
     expiry_date: data.expiration,
     saved_at: Date.now(),
   };

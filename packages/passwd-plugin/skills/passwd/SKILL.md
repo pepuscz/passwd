@@ -14,7 +14,7 @@ Find and use credentials from your team's passwd.team vault.
 Inject a credential as an environment variable:
 
 ```bash
-npx -y @passwd/passwd-agent-cli@1.4.3 exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
+npx -y @passwd/passwd-agent-cli@1.4.4 exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
 ```
 
 Multiple secrets: add more `--inject VAR=ID:field` flags.

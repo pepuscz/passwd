@@ -28,7 +28,7 @@ import {
 
 const server = new McpServer({
   name: "passwd-mcp",
-  version: "1.4.3",
+  version: "1.4.4",
 });
 
 // --- Tool 1: passwd_login ---
@@ -150,6 +150,8 @@ server.tool(
 );
 
 // --- Tool 4: get_totp_code ---
+const totpLastCall = new Map<string, number>();
+
 server.tool(
   "get_totp_code",
   "Get the current TOTP (Time-based One-Time Password) code for a secret that has TOTP configured.",
@@ -158,7 +160,17 @@ server.tool(
   },
   async ({ id }) => {
     try {
+      const now = Date.now();
+      const last = totpLastCall.get(id);
+      if (last && now - last < 30_000) {
+        const wait = Math.ceil((30_000 - (now - last)) / 1000);
+        return {
+          content: [{ type: "text" as const, text: `Rate limited: wait ${wait}s before requesting a new TOTP code for this secret.` }],
+          isError: true,
+        };
+      }
       const totp = await getTotpCode(id);
+      totpLastCall.set(id, now);
       return {
         content: [
           {
