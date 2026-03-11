@@ -1,6 +1,6 @@
 {
   "name": "@passwd/passwd-agent-cli",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Agent-safe CLI for passwd.team — no command exposes raw credential values",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@passwd/passwd-lib": "1.4.0",
+    "@passwd/passwd-lib": "1.4.1",
     "commander": "^13.1.0"
   },
   "repository": {

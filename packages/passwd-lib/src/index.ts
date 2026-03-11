@@ -34,8 +34,6 @@ export {
   resetDiscoveryCache,
   getTokenDir,
   deleteTokens,
-  encrypt,
-  decrypt,
 } from "./auth.js";
 
 export type { EnvInfo } from "./envs.js";
