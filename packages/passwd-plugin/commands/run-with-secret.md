@@ -1,4 +1,4 @@
-# /passwd:use-credential
+# /passwd:run-with-secret
 
 Inject a credential into a command without exposing it.
 
