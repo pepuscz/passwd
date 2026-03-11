@@ -14,10 +14,23 @@ function findRoot(dir: string): string {
 }
 const ROOT = findRoot(__dirname);
 
-/** Read origin from first available token file in ~/.passwd */
+/** Read origin from environments.json or token files in ~/.passwd */
 function detectOriginFromTokens(): string | undefined {
   const tokenDir = resolve(homedir(), ".passwd");
   if (!existsSync(tokenDir)) return undefined;
+
+  // Prefer environments.json (works with both encrypted and plaintext tokens)
+  const envFile = resolve(tokenDir, "environments.json");
+  if (existsSync(envFile)) {
+    try {
+      const envs = JSON.parse(readFileSync(envFile, "utf-8"));
+      if (Array.isArray(envs) && envs.length > 0 && envs[0].origin) {
+        return envs[0].origin;
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Fallback: try reading plaintext token files (pre-v1.4.0)
   const files = readdirSync(tokenDir).filter(
     (f) => f.startsWith("tokens-") && f.endsWith(".json"),
   );
