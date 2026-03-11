@@ -9,7 +9,7 @@ Three tools for different scopes — pick what fits your setup.
 | Tool | Can do | Cannot do |
 |---|---|---|
 | **MCP server** | Browse secrets, view details (redacted), pull TOTP codes | Credential output, writes, exec |
-| **Agent CLI** | All of MCP + inject credentials via `exec`, stdout masked | Raw credential output, writes |
+| **Agent CLI** | Browse, TOTP, inject credentials via `exec` (stdout masked) | Raw credential output, writes |
 | **Full CLI** | Everything — raw values, create, update, delete, share | — |
 
 ## Setup
@@ -22,7 +22,7 @@ Pick your platform. In all examples below, replace `https://your-deployment.pass
 | OpenClaw | [OpenClaw](#openclaw) |
 | Any MCP client | [MCP server](#mcp-server) |
 | AI agents with shell access | [Agent CLI](#agent-cli) |
-| Terminal / scripts / CI | [CLI](#cli) |
+| Terminal / scripts / CI | [Full CLI](#full-cli) |
 
 ### Claude Cowork
 
@@ -168,7 +168,7 @@ npx @passwd/passwd-agent-cli@1.3.1 exec --inject DB_PASS=SECRET_ID:password -- p
 
 Credentials are injected as environment variables into the child process. Stdout is always masked — if the subprocess prints a secret value, it's replaced with `<concealed by passwd>`. The raw values never enter the AI context.
 
-### CLI
+### Full CLI
 
 The full CLI (`@passwd/passwd-cli`) has complete access to your vault — including raw credential values via `--field` and unmasked output via `--no-masking`. Use it for terminal sessions, scripts, and CI pipelines where you control the environment.
 
@@ -197,7 +197,7 @@ cd passwd
 npm install && npm run build
 ```
 
-Then use `node packages/passwd-mcp/dist/index.js` or `node packages/passwd-cli/dist/index.js` in place of `npx` commands above.
+Then use `node packages/passwd-mcp/dist/index.js`, `node packages/passwd-agent-cli/dist/index.js`, or `node packages/passwd-cli/dist/index.js` in place of `npx` commands above.
 
 ## Upgrading
 
@@ -233,10 +233,11 @@ The agent CLI (`@passwd/passwd-agent-cli`, binary `passwd-agent`) is a hardened 
 | `passwd-agent get <id>` | Get a secret (always redacted, no `--field`) |
 | `passwd-agent totp <id>` | Get current TOTP code |
 | `passwd-agent exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`, stdout always masked) |
+| `passwd-agent resolve` | Exec secrets provider — reads secret IDs from stdin, returns values on stdout (used by OpenClaw gateway) |
 | `passwd-agent envs` | List known environments (`--json`) |
 | `passwd-agent --env <name>` | Global flag: target a specific environment by name substring |
 
-## CLI commands reference
+## Full CLI commands reference
 
 The full CLI (`@passwd/passwd-cli`, binary `passwd`) has complete vault access including raw credential output. For AI agent integrations, use the agent CLI above.
 
