@@ -43,7 +43,7 @@ For multiple deployments, add separate MCP server entries in `.mcp.json` with di
 passwd has two OpenClaw integrations — pick based on where the credential is needed:
 
 - **Config field on the [SecretRef supported list](https://docs.openclaw.ai/reference/secretref-credential-surface)?** → Use the **secrets provider** — the gateway resolves it at startup, the agent never sees it.
-- **Runtime credential the agent needs** (database login, deploy key, API call)? → Use the **agent skill** — the agent injects it into a command via `exec --inject`, without seeing the raw value.
+- **Runtime credential the agent needs** (database login, deploy key, custom API call)? → Use the **agent skill** — the agent injects it into a command via `exec --inject`, without seeing the raw value.
 
 You can use both together.
 
