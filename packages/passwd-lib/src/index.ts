@@ -25,6 +25,7 @@ export type {
 
 export {
   requireHttps,
+  requireSameOrigin,
   getApiUrl,
   buildOAuthUrl,
   extractCodeFromRedirectUrl,

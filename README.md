@@ -215,6 +215,16 @@ PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.4.2 login
 npx @passwd/passwd-cli@1.4.2 list --env acme
 ```
 
+### Passing sensitive values via stdin
+
+For `--password`, `--totp`, `--credentials`, `--private-key`, `--secure-note`, `--card-number`, and `--cvv-code`, pass `-` as the value to read from stdin instead of exposing the value in the process list:
+
+```bash
+echo "s3cret" | passwd create -t password -n "My secret" --password -
+```
+
+Only one flag can read from stdin per invocation.
+
 ### Building from source
 
 ```bash
@@ -270,14 +280,15 @@ The full CLI (`@passwd/passwd-cli`, binary `passwd`) has complete vault access i
 | `passwd whoami` | Show current user |
 | `passwd list` | List/search secrets (`-q`, `-t`, `--json`) |
 | `passwd get <id>` | Get a secret (redacted by default; `--field` for raw value) |
-| `passwd create` | Create a secret (`-t`, `-n`, `--group`, `--user`, `--file`, `--visible-to-all`) |
-| `passwd update <id>` | Update a secret (`--group`, `--user`, `--file`, `--remove-file`, `--visible-to-all`) |
+| `passwd create` | Create a secret (`-t`, `-n`, `--group`, `--user`, `--file`, `--visible-to-all`, plus type-specific flags — see `--help`) |
+| `passwd update <id>` | Update a secret (same flags as create, plus `--remove-file`) |
 | `passwd delete <id>` | Delete a secret (`-y` to skip confirmation) |
 | `passwd totp <id>` | Get current TOTP code |
 | `passwd share <id>` | Enable/revoke sharing (`--revoke`) |
 | `passwd groups` | List workspace groups |
 | `passwd contacts` | List workspace contacts |
 | `passwd envs` | List known environments (`--json`) |
+| `passwd resolve` | OpenClaw secrets provider — reads JSON from stdin, writes resolved values to stdout |
 | `passwd exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`, `--no-masking` to disable stdout masking) |
 | `passwd --env <name>` | Global flag: target a specific environment by name substring |
 

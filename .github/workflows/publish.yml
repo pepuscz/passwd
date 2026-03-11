@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -21,18 +22,22 @@ jobs:
       - run: npm run build
       - run: node --test packages/*/dist/__tests__/*.test.js
 
-      - run: npm publish --workspace packages/passwd-lib || true
+      - name: Publish passwd-lib
+        run: npm publish --workspace packages/passwd-lib --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: npm publish --workspace packages/passwd-mcp || true
+      - name: Publish passwd-mcp
+        run: npm publish --workspace packages/passwd-mcp --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: npm publish --workspace packages/passwd-cli || true
+      - name: Publish passwd-cli
+        run: npm publish --workspace packages/passwd-cli --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: npm publish --workspace packages/passwd-agent-cli || true
+      - name: Publish passwd-agent-cli
+        run: npm publish --workspace packages/passwd-agent-cli --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

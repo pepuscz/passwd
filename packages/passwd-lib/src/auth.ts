@@ -125,12 +125,26 @@ let _discoveredApiUrl: string | null = null;
 let _discoveredClientId: string | null = null;
 let _discoveryDone = false;
 
+export function requireSameOrigin(url: string, origin: string, label: string): void {
+  const discoveredHost = new URL(url).hostname;
+  const originHost = new URL(origin).hostname;
+  if (discoveredHost !== originHost) {
+    throw new Error(
+      `${label} hostname '${discoveredHost}' does not match PASSWD_ORIGIN hostname '${originHost}'`
+    );
+  }
+}
+
 async function discoverFromOrigin(origin: string): Promise<void> {
   if (_discoveryDone) return;
   _discoveryDone = true;
 
   try {
-    const response = await fetch(origin, { headers: { Accept: "text/html" } });
+    const response = await fetch(origin, {
+      headers: { Accept: "text/html" },
+      redirect: "manual",
+    });
+    if (!response.ok) return;
     const html = await response.text();
 
     // Discover API URL from <meta name="app-api" content="...">
@@ -138,6 +152,7 @@ async function discoverFromOrigin(origin: string): Promise<void> {
     if (apiMatch?.[1]) {
       const discovered = apiMatch[1].replace(/\/+$/, "");
       requireHttps(discovered, "Discovered API URL");
+      requireSameOrigin(discovered, origin, "Discovered API URL");
       _discoveredApiUrl = discovered;
     }
 
@@ -145,7 +160,9 @@ async function discoverFromOrigin(origin: string): Promise<void> {
     const scriptMatch = html.match(/src=["']([^"']*index[^"']*\.js)["']/i);
     if (scriptMatch?.[1]) {
       const scriptUrl = new URL(scriptMatch[1], origin).href;
-      const jsResponse = await fetch(scriptUrl);
+      requireSameOrigin(scriptUrl, origin, "Discovered script URL");
+      const jsResponse = await fetch(scriptUrl, { redirect: "manual" });
+      if (!jsResponse.ok) return;
       const js = await jsResponse.text();
       const clientIdMatch = js.match(/(\d+-[a-z0-9]+\.apps\.googleusercontent\.com)/);
       if (clientIdMatch?.[1]) {

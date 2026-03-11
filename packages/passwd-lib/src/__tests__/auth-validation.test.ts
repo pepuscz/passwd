@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { requireHttps } from "../auth.js";
+import { requireHttps, requireSameOrigin } from "../auth.js";
 
 describe("requireHttps", () => {
   it("accepts HTTPS URLs", () => {
@@ -53,6 +53,49 @@ describe("requireHttps", () => {
     assert.throws(
       () => requireHttps("", "test"),
       { message: /must use HTTPS/ },
+    );
+  });
+});
+
+describe("requireSameOrigin", () => {
+  it("accepts same hostname", () => {
+    assert.doesNotThrow(() =>
+      requireSameOrigin("https://acme.passwd.team/api", "https://acme.passwd.team", "test"),
+    );
+  });
+
+  it("accepts same hostname with different paths", () => {
+    assert.doesNotThrow(() =>
+      requireSameOrigin("https://acme.passwd.team/api/v2", "https://acme.passwd.team/other", "test"),
+    );
+  });
+
+  it("accepts same hostname with different ports", () => {
+    assert.doesNotThrow(() =>
+      requireSameOrigin("https://localhost:3001/api", "https://localhost:3001", "test"),
+    );
+  });
+
+  it("rejects different hostname", () => {
+    assert.throws(
+      () => requireSameOrigin("https://evil.com/api", "https://acme.passwd.team", "API URL"),
+      { message: /API URL hostname 'evil.com' does not match.*'acme.passwd.team'/ },
+    );
+  });
+
+  it("rejects subdomain mismatch", () => {
+    assert.throws(
+      () => requireSameOrigin("https://evil.passwd.team/api", "https://acme.passwd.team", "test"),
+      { message: /does not match/ },
+    );
+  });
+
+  it("rejects protocol-relative URL resolved to different host", () => {
+    // Simulates <script src="//attacker.com/index.js"> resolved against origin
+    const resolved = new URL("//attacker.com/index.js", "https://acme.passwd.team").href;
+    assert.throws(
+      () => requireSameOrigin(resolved, "https://acme.passwd.team", "Script URL"),
+      { message: /does not match/ },
     );
   });
 });

@@ -81,10 +81,21 @@ function writeResponse(values: Record<string, string>, errors: Record<string, st
   process.stdout.write(JSON.stringify(response) + "\n");
 }
 
+const MAX_STDIN_BYTES = 64 * 1024; // 64 KB
+
 function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
+    let totalBytes = 0;
     const chunks: Buffer[] = [];
-    process.stdin.on("data", (chunk) => chunks.push(chunk));
+    process.stdin.on("data", (chunk: Buffer) => {
+      totalBytes += chunk.length;
+      if (totalBytes > MAX_STDIN_BYTES) {
+        process.stdin.destroy();
+        reject(new Error(`stdin exceeds ${MAX_STDIN_BYTES} byte limit`));
+        return;
+      }
+      chunks.push(chunk);
+    });
     process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     process.stdin.on("error", reject);
   });
