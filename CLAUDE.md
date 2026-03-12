@@ -68,22 +68,30 @@ Run `npm test` before every commit. Integration tests before release.
 
 ## Release process
 
-1. Bump version in all places:
+1. Bump version — use `replace_all` to replace the old version string with the new one in every file. The version appears in 11 files:
    - `packages/passwd-lib/package.json` — version
    - `packages/passwd-mcp/package.json` — version + `@passwd/passwd-lib` dep
+   - `packages/passwd-mcpb/package.json` — version + `@passwd/passwd-lib` dep
+   - `packages/passwd-mcpb/manifest.json` — version
+   - `packages/passwd-mcpb/src/index.ts` — server version + clientInfo version
    - `packages/passwd-cli/package.json` — version + `@passwd/passwd-lib` dep
    - `packages/passwd-agent-cli/package.json` — version + `@passwd/passwd-lib` dep
-   - `packages/passwd-mcp/src/index.ts` — MCP server version string
-   - `packages/passwd-mcpb/src/index.ts` — MCPB server version string
-   - `packages/passwd-mcpb/manifest.json` — MCPB manifest version
+   - `packages/passwd-mcp/src/index.ts` — server version string
    - `packages/passwd-cli/src/index.ts` — CLI version string
    - `packages/passwd-agent-cli/src/index.ts` — CLI version string
-   - `README.md` — all `@x.y.z` references (use replace_all)
+   - `README.md` — all `@x.y.z` references
 2. `npm install` — regenerate lockfile
 3. `npm run build` — verify it compiles
 4. `npm test` — run unit tests
 5. `npm run test:integration` — run integration tests locally (requires `~/.passwd/` tokens)
-6. Commit, push — GitHub Action (`.github/workflows/publish.yml`) auto-publishes all four packages to npm on push to main
-7. `gh release create vX.Y.Z --title "vX.Y.Z — Short label"` — title must be ≤25 chars so it fits the GitHub sidebar without truncation. Format: `vX.Y.Z — Two-three words`. Don't describe implementation details in the title or notes.
+6. Verify no old version remains: `grep -r "OLD_VERSION" --include="*.json" --include="*.ts" --include="*.md"` (lockfile excluded)
+7. Commit, push — GitHub Action auto-publishes all four npm packages on push to main
+8. `gh release create vX.Y.Z --title "vX.Y.Z — Short label"` — this creates a tag, which triggers a second CI run that builds `.mcpb` on macOS and attaches it to the release. Title must be ≤25 chars. Format: `vX.Y.Z — Two-three words`.
+9. Wait for CI — check `gh run list` to confirm all three jobs pass: `publish` (npm), `build-mcpb` (macOS build), `release-mcpb` (attaches `.mcpb` to release)
+10. Verify: `gh release view vX.Y.Z` should show `passwd.mcpb` as an asset
+
+**Important**: The `.mcpb` is NOT committed to git (it's in `.gitignore`). It's built by CI on macOS and attached to the GitHub release. Users download it from the releases page.
+
+**Build script note**: `packages/passwd-mcpb/build.sh` pins `@passwd/passwd-lib` to `latest` during bundle install (since the new version may not be published yet), then overwrites with the local build. This works both locally and in CI.
 
 Keep commit messages short for public repo. Don't expose security implementation details in public commits/releases.
