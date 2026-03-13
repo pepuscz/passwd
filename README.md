@@ -37,17 +37,7 @@ Desktop extension (`.mcpb`). Works in both Chat and Cowork tabs of the Claude ma
 
 **4. Authenticate** — ask Claude to log in. A browser window opens for Google OAuth.
 
-**Connecting to services** — For services with an MCP server, the agent can interact with them directly. Copy the service's MCP configuration into the secret's **note** field and replace credential values with field names (`username`, `password`). Both standard formats work:
-
-```json
-{"mcpServers": {"service": {"command": "npx", "args": ["mcp-remote", "https://mcp.example.com/mcp", "--header", "x-email: ${EMAIL}", "--header", "x-pass: ${PASS}"], "env": {"EMAIL": "username", "PASS": "password"}}}}
-```
-
-```json
-{"url": "https://mcp.example.com/mcp", "headers": {"x-email": "username", "x-pass": "password"}}
-```
-
-The agent detects the config and connects automatically.
+**Connecting to services** — For services with an MCP server, paste the MCP configuration into the secret's **note** field. The agent detects it and connects automatically.
 
 Example — two messages work best:
 1. *"Find my Rohlik credentials in passwd and read the details"*
