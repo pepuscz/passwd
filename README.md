@@ -8,7 +8,7 @@ Four tools for different scopes — pick what fits your setup.
 
 | Tool | Can do | Cannot do |
 |---|---|---|
-| **Desktop extension** | Browse secrets, TOTP, use credentials on your behalf (output masked) | Raw credential output, writes |
+| **Claude extension** | Browse secrets, TOTP, use credentials on your behalf (output masked) | Raw credential output, writes |
 | **MCP server** | Browse secrets, view details (redacted), pull TOTP codes | Credential output, writes, exec |
 | **Agent CLI** | Browse, TOTP, run commands with credentials (stdout masked) | Raw credential output, writes |
 | **Full CLI** | Everything — raw values, create, update, delete, share | — |
@@ -27,7 +27,7 @@ Pick your platform. In all examples below, replace `https://your-deployment.pass
 
 ### Claude
 
-Desktop extension (`.mcpb`). Works in both Chat and Cowork tabs of the Claude macOS app. Credentials never reach the AI — all output is masked.
+Claude extension (`.mcpb`). Works in both Chat and Cowork tabs of the Claude macOS app. Credentials never reach the AI — all output is masked.
 
 **1. Download** `passwd.mcpb` from the [latest release](https://github.com/pepuscz/passwd/releases).
 
@@ -324,7 +324,7 @@ The full CLI (`@passwd/passwd-cli`, binary `passwd`) has complete vault access i
 packages/
   passwd-lib/        Core library (types, auth, API — zero dependencies)
   passwd-mcp/        MCP server (depends on passwd-lib)
-  passwd-mcpb/       Desktop extension for Claude (.mcpb)
+  passwd-mcpb/       Claude extension (.mcpb)
   passwd-cli/        Full CLI (depends on passwd-lib)
   passwd-agent-cli/  Agent CLI — no command exposes raw credentials (depends on passwd-lib)
 ```
