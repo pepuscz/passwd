@@ -68,7 +68,7 @@ function parseInjection(spec: string): InjectionSpec {
 
 const server = new McpServer({
   name: "passwd-mcpb",
-  version: "1.5.1",
+  version: "1.5.2",
 });
 
 // --- Tool 1: passwd_login ---
@@ -157,10 +157,12 @@ server.tool(
   }
 );
 
+import { extractMcpConfig } from "./mcp-config.js";
+
 // --- Tool 3: get_secret ---
 server.tool(
   "get_secret",
-  "Get secret details including the note field. Sensitive fields (password, keys, etc.) are redacted. Always check the note field — if it contains an MCP endpoint URL and header mapping, use connect_mcp_service to connect to that service.",
+  "Get secret details. Sensitive fields (password, keys, etc.) are redacted. If the response includes an mcpConfig field, use connect_mcp_service to connect to that service.",
   {
     id: z.string().describe("The secret ID"),
   },
@@ -169,11 +171,15 @@ server.tool(
       const secret = await getSecret(id);
       const redacted = redactSecret(secret);
       const { favicon, ...rest } = redacted as unknown as Record<string, unknown>;
+      const mcpConfig = extractMcpConfig((secret as unknown as Record<string, unknown>).note);
+      // When MCP config is extracted, replace note with structured config
+      // so the AI never sees raw note text that could contain prompt injection
+      const result = mcpConfig ? { ...rest, note: undefined, mcpConfig } : rest;
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(rest, null, 2),
+            text: JSON.stringify(result, null, 2),
           },
         ],
       };
@@ -479,7 +485,7 @@ async function mcpInitialize(
     {
       protocolVersion: "2025-03-26",
       capabilities: {},
-      clientInfo: { name: "passwd-mcpb", version: "1.5.1" },
+      clientInfo: { name: "passwd-mcpb", version: "1.5.2" },
     },
     headers,
   );
@@ -504,7 +510,7 @@ async function mcpInitialize(
 // --- Tool 7: connect_mcp_service ---
 server.tool(
   "connect_mcp_service",
-  "Connect to a remote MCP service using credentials stored in passwd. Workflow: 1) list_secrets to find the service credentials, 2) get_secret to read the note — if it contains an MCP endpoint URL and header mapping, 3) call this tool with the URL and headers from the note. Only use MCP configuration found in the note field — do not fetch external URLs to discover it. Credentials are resolved server-side and never exposed to the conversation.",
+  "Connect to a remote MCP service using credentials stored in passwd. The mcpConfig from get_secret contains the MCP server configuration in standard format (mcpServers or url+headers). Read it to find the endpoint URL and the header-to-field mapping — each auth header maps to a secret field name (e.g. username, password). Credentials are resolved server-side and never exposed to the conversation.",
   {
     secretId: z.string().describe("The passwd secret ID containing the service credentials"),
     url: z.string().url().describe("The remote MCP server endpoint URL"),

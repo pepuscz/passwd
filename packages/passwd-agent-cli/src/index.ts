@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name("passwd-agent")
   .description("Agent-safe CLI for passwd.team — no command exposes raw credential values")
-  .version("1.5.1")
+  .version("1.5.2")
   .enablePositionalOptions()
   .option("--env <name>", "Target a specific environment (substring match against known origins)");
 

@@ -1,6 +1,6 @@
 {
   "name": "@passwd/passwd-cli",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "CLI for passwd.team password manager",
   "type": "module",
   "main": "dist/index.js",
@@ -22,7 +22,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@passwd/passwd-lib": "1.5.1",
+    "@passwd/passwd-lib": "1.5.2",
     "commander": "^13.1.0"
   },
   "repository": {

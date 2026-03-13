@@ -37,7 +37,17 @@ Desktop extension (`.mcpb`). Works in both Chat and Cowork tabs of the Claude ma
 
 **4. Authenticate** — ask Claude to log in. A browser window opens for Google OAuth.
 
-**Connecting to services** — For services with an MCP server, the agent can interact with them directly. Add the service's MCP configuration (endpoint URL and header mapping) to the secret's **note** field. The agent reads the note and connects.
+**Connecting to services** — For services with an MCP server, the agent can interact with them directly. Copy the service's MCP configuration into the secret's **note** field and replace credential values with field names (`username`, `password`). Both standard formats work:
+
+```json
+{"mcpServers": {"service": {"command": "npx", "args": ["mcp-remote", "https://mcp.example.com/mcp", "--header", "x-email: ${EMAIL}", "--header", "x-pass: ${PASS}"], "env": {"EMAIL": "username", "PASS": "password"}}}}
+```
+
+```json
+{"url": "https://mcp.example.com/mcp", "headers": {"x-email": "username", "x-pass": "password"}}
+```
+
+The agent detects the config and connects automatically.
 
 Example — two messages work best:
 1. *"Find my Rohlik credentials in passwd and read the details"*
@@ -64,7 +74,7 @@ Resolve [SecretRefs](https://docs.openclaw.ai/gateway/secrets#secretref-contract
 **1. Authenticate** (the gateway runs `passwd-cli`, not the agent):
 
 ```bash
-PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.5.1 login
+PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.5.2 login
 ```
 
 **2. Add the secrets provider** to `gateway.config.json5`:
@@ -76,7 +86,7 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.5.
       passwd: {
         source: "exec",
         command: "/usr/local/bin/npx",          // absolute path to npx
-        args: ["-y", "@passwd/passwd-cli@1.5.1", "resolve"],
+        args: ["-y", "@passwd/passwd-cli@1.5.2", "resolve"],
         passEnv: ["PASSWD_ORIGIN", "HOME"],
         allowSymlinkCommand: true,              // needed if npx is a symlink (Homebrew)
         trustedDirs: ["/usr/local", "/opt/homebrew"],
@@ -102,7 +112,7 @@ PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-cli@1.5.
 }
 ```
 
-Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.5.1 list` to find them.
+Store your API keys as secrets in passwd.team, then use their IDs in the `id` field. Run `npx @passwd/passwd-cli@1.5.2 list` to find them.
 
 #### Agent skill
 
@@ -111,7 +121,7 @@ Let the agent browse your vault, check TOTP codes, and inject credentials into c
 **1. Authenticate** with the agent-safe CLI:
 
 ```bash
-PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cli@1.5.1 login
+PASSWD_ORIGIN=https://your-deployment.passwd.team npx -y @passwd/passwd-agent-cli@1.5.2 login
 ```
 
 **2. Add the skill** at `~/.openclaw/workspace/skills/passwd/SKILL.md`:
@@ -134,7 +144,7 @@ metadata:
 
 Browse credentials and generate TOTP codes from your team's passwd.team vault. Always use `--json` for structured output.
 
-CMD: `npx -y @passwd/passwd-agent-cli@1.5.1`
+CMD: `npx -y @passwd/passwd-agent-cli@1.5.2`
 
 ## Commands
 
@@ -169,7 +179,7 @@ CMD envs --json
 
 **3. Restart the gateway** so the skill and provider are discovered.
 
-For multiple deployments, log in to each origin separately (`PASSWD_ORIGIN=... npx @passwd/passwd-agent-cli@1.5.1 login`). The agent can then switch with `--env` — see the Multi-environment section in the skill above.
+For multiple deployments, log in to each origin separately (`PASSWD_ORIGIN=... npx @passwd/passwd-agent-cli@1.5.2 login`). The agent can then switch with `--env` — see the Multi-environment section in the skill above.
 
 ### MCP server
 
@@ -180,7 +190,7 @@ If you just want read-only access to your vault from any MCP-compatible client �
   "mcpServers": {
     "passwd": {
       "command": "npx",
-      "args": ["-y", "@passwd/passwd-mcp@1.5.1"],
+      "args": ["-y", "@passwd/passwd-mcp@1.5.2"],
       "env": {
         "PASSWD_ORIGIN": "https://your-deployment.passwd.team"
       }
@@ -197,9 +207,9 @@ The agent CLI (`@passwd/passwd-agent-cli`) is a hardened subset of the full CLI 
 
 ```bash
 export PASSWD_ORIGIN=https://your-deployment.passwd.team
-npx @passwd/passwd-agent-cli@1.5.1 login
-npx @passwd/passwd-agent-cli@1.5.1 list
-npx @passwd/passwd-agent-cli@1.5.1 exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U app
+npx @passwd/passwd-agent-cli@1.5.2 login
+npx @passwd/passwd-agent-cli@1.5.2 list
+npx @passwd/passwd-agent-cli@1.5.2 exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U app
 ```
 
 Credentials are injected as environment variables into the child process. Stdout is always masked — if the subprocess prints a secret value, it's replaced with `<concealed by passwd>`. The raw values never enter the AI context.
@@ -212,17 +222,17 @@ The full CLI (`@passwd/passwd-cli`) has complete access to your vault — includ
 
 ```bash
 export PASSWD_ORIGIN=https://your-deployment.passwd.team
-npx @passwd/passwd-cli@1.5.1 login
-npx @passwd/passwd-cli@1.5.1 list
-npx @passwd/passwd-cli@1.5.1 --help
+npx @passwd/passwd-cli@1.5.2 login
+npx @passwd/passwd-cli@1.5.2 list
+npx @passwd/passwd-cli@1.5.2 --help
 ```
 
 For multiple deployments, log in to each origin separately, then use `--env` to switch:
 
 ```bash
-PASSWD_ORIGIN=https://acme.passwd.team npx @passwd/passwd-cli@1.5.1 login
-PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.5.1 login
-npx @passwd/passwd-cli@1.5.1 list --env acme
+PASSWD_ORIGIN=https://acme.passwd.team npx @passwd/passwd-cli@1.5.2 login
+PASSWD_ORIGIN=https://initech.passwd.team npx @passwd/passwd-cli@1.5.2 login
+npx @passwd/passwd-cli@1.5.2 list --env acme
 ```
 
 ### Passing sensitive values via stdin
@@ -270,7 +280,7 @@ The Claude desktop extension (`passwd.mcpb`) includes all 5 tools above plus:
 | Tool | Description |
 |---|---|
 | `run_with_credentials` | Run a command with secrets injected as env vars (stdout/stderr masked) |
-| `connect_mcp_service` | Connect to a remote MCP service using credentials from a secret (agent reads the note field for endpoint URL and header mapping) |
+| `connect_mcp_service` | Connect to a remote MCP service using credentials from a secret (MCP config extracted from note field JSON) |
 | `call_remote_tool` | Call a tool on a connected remote MCP service (credentials injected as HTTP headers, response masked) |
 
 ## Agent CLI commands reference

@@ -3,7 +3,7 @@
   "name": "passwd",
   "display_name": "passwd.team",
   "description": "Team vault access — browse secrets, get TOTP codes, run commands with injected credentials, and connect to services directly using credentials from the vault.",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "author": { "name": "passwd.team", "url": "https://passwd.team" },
   "server": {
     "type": "node",

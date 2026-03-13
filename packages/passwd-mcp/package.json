@@ -1,6 +1,6 @@
 {
   "name": "@passwd/passwd-mcp",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "MCP server for passwd.team password manager",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@passwd/passwd-lib": "1.5.1",
+    "@passwd/passwd-lib": "1.5.2",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.24.2"
   },
