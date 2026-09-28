@@ -24,6 +24,7 @@ import {
   getTotpCode,
   getCurrentUser,
   redactSecret,
+  redactSecretListItem,
 } from "@passwd/passwd-lib";
 
 const server = new McpServer({
@@ -95,7 +96,10 @@ server.tool(
     try {
       const result = await listSecrets({ ...params, limit: params.limit ?? 50 });
       // Strip favicon from list results to save tokens
-      const secrets = result.secrets.map(({ favicon, ...rest }: Record<string, unknown>) => rest);
+      const secrets = result.secrets.map((s) => {
+        const { favicon, ...rest } = redactSecretListItem(s);
+        return rest;
+      });
       return {
         content: [
           {

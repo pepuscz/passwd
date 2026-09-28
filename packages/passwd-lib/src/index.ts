@@ -60,4 +60,6 @@ export {
   listContacts,
   getCurrentUser,
   redactSecret,
+  redactSecretListItem,
+  decodeSecretFile,
 } from "./api.js";

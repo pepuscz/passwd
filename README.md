@@ -169,6 +169,10 @@ CMD exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U user
 
 Multiple secrets: add more `--inject VAR=ID:field` flags.
 
+File attachments (kubeconfig, certificates, key files): `--inject-file VAR=SECRET_ID` writes the attachment to a private temp file (0600), sets VAR to its path and deletes it when the command exits:
+CMD exec --inject-file KUBECONFIG=SECRET_ID -- kubectl get pods
+A text attachment can also go straight into a variable with `--inject VAR=SECRET_ID:file`.
+
 ## Multi-environment
 
 Use --env NAME with any command to target a specific passwd.team deployment:
@@ -244,6 +248,8 @@ npx @passwd/passwd-agent-cli@1.6.1 exec --inject DB_PASS=SECRET_ID:password -- p
 ```
 
 Credentials are injected as environment variables into the child process. Stdout is always masked — if the subprocess prints a secret value, it's replaced with `<concealed by passwd>`. The raw values never enter the AI context.
+
+File attachments are redacted in `list` and `get` like any other credential (the file name stays visible). To use one, `exec --inject-file VAR=SECRET_ID` writes it to a private temp file and sets VAR to the path; for text attachments the file content is masked in the output too, whole and line by line.
 
 ### Full CLI
 
@@ -330,7 +336,7 @@ The agent CLI (`@passwd/passwd-agent-cli`, binary `passwd-agent`) is a hardened 
 | `passwd-agent list` | List/search secrets (`-q`, `-t`, `--json`) |
 | `passwd-agent get <id>` | Get a secret (always redacted, no `--field`) |
 | `passwd-agent totp <id>` | Get current TOTP code |
-| `passwd-agent exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`, stdout always masked) |
+| `passwd-agent exec` | Run command with secrets as env vars (`--inject VAR=ID:FIELD`) or attachments as temp files (`--inject-file VAR=ID`), stdout always masked |
 | `passwd-agent mcp-wrap` | Launch `mcp-remote` with credentials as HTTP headers (`header=ID:FIELD`) |
 | `passwd-agent envs` | List known environments (`--json`) |
 | `passwd-agent --env <name>` | Global flag: target a specific environment by name substring |

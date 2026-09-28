@@ -15,6 +15,7 @@ import {
   getTotpCode,
   getCurrentUser,
   redactSecret,
+  redactSecretListItem,
 } from "@passwd/passwd-lib";
 
 function openBrowser(url: string): void {
@@ -134,7 +135,10 @@ server.tool(
   async (params) => {
     try {
       const result = await listSecrets({ ...params, limit: params.limit ?? 50 });
-      const secrets = result.secrets.map(({ favicon, ...rest }: Record<string, unknown>) => rest);
+      const secrets = result.secrets.map((s) => {
+        const { favicon, ...rest } = redactSecretListItem(s);
+        return rest;
+      });
       return {
         content: [
           {

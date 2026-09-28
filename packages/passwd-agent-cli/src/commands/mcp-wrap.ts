@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { getSecret } from "@passwd/passwd-lib";
+import { resolveFieldValue } from "../util/resolve-field.js";
 
 interface HeaderMapping {
   headerName: string;
@@ -61,12 +62,8 @@ export async function mcpWrapCommand(
   for (const spec of mappings) {
     const { headerName, secretId, field } = parseMapping(spec);
     const secret = await getSecret(secretId);
-    const value = (secret as unknown as Record<string, unknown>)[field];
-    if (value === undefined) {
-      throw new Error(`Field '${field}' not found in secret '${secretId}'`);
-    }
     headerNames.push(headerName);
-    secretValues.push(String(value));
+    secretValues.push(resolveFieldValue(secret, secretId, field));
   }
 
   const { cmd, envVars } = buildMcpCommand(url, headerNames, secretValues);

@@ -66,7 +66,11 @@ program
 program
   .command("exec")
   .description("Run a command with secrets injected as environment variables")
-  .option("--inject <mapping...>", "VAR=SECRET_ID:FIELD (repeatable)")
+  .option("--inject <mapping...>", "VAR=SECRET_ID:FIELD (repeatable); FIELD 'file' injects the decoded text attachment")
+  .option(
+    "--inject-file <mapping...>",
+    "VAR=SECRET_ID (repeatable): write the file attachment to a private temp file (0600), set VAR to its path, delete it when the command exits",
+  )
   .argument("[args...]", "Command to execute (after --)")
   .passThroughOptions()
   .action((args, opts) => {

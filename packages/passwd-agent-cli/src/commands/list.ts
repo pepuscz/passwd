@@ -1,4 +1,4 @@
-import { listSecrets } from "@passwd/passwd-lib";
+import { listSecrets, redactSecretListItem } from "@passwd/passwd-lib";
 import { formatJson, formatSecretRow } from "../util/format.js";
 
 export async function listCommand(opts: {
@@ -16,7 +16,9 @@ export async function listCommand(opts: {
   });
 
   if (opts.json) {
-    console.log(formatJson(result));
+    // The list endpoint returns full secret objects (attachments included):
+    // redact them exactly like `get` does.
+    console.log(formatJson({ ...result, secrets: result.secrets.map(redactSecretListItem) }));
   } else {
     console.log(`Total: ${result.totalCount}`);
     for (const s of result.secrets) {

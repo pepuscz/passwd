@@ -78,3 +78,28 @@ export function parseInjection(spec: string): InjectionSpec {
   const field = rest.slice(colonIdx + 1);
   return { varName, secretId, field };
 }
+
+/**
+ * Parse a single --inject-file spec: VAR=SECRET_ID, or VAR=SECRET_ID:file.
+ * The only field a file injection can take is the attachment itself.
+ *
+ * Throws on malformed input or blocked variable names.
+ */
+export function parseFileInjection(spec: string): InjectionSpec {
+  const eqIdx = spec.indexOf("=");
+  if (eqIdx === -1 || eqIdx === spec.length - 1) {
+    throw new Error(`Invalid --inject-file format: '${spec}'. Expected VAR=SECRET_ID`);
+  }
+  const varName = spec.slice(0, eqIdx);
+  if (BLOCKED_ENV_VARS.has(varName)) {
+    throw new Error(`Blocked environment variable: '${varName}'. Cannot override security-sensitive variables via --inject-file.`);
+  }
+  const rest = spec.slice(eqIdx + 1);
+  const colonIdx = rest.indexOf(":");
+  const secretId = colonIdx === -1 ? rest : rest.slice(0, colonIdx);
+  const field = colonIdx === -1 ? "file" : rest.slice(colonIdx + 1);
+  if (field !== "file") {
+    throw new Error(`Invalid --inject-file field: '${field}'. Only the file attachment can be injected as a file`);
+  }
+  return { varName, secretId, field };
+}

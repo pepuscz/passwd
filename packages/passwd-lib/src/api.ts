@@ -1,6 +1,7 @@
 import { getApiUrl, getAccessToken, refreshToken, loadTokens } from "./auth.js";
 import type {
   Secret,
+  SecretFile,
   SecretListItem,
   TOTPResponse,
   ShareResponse,
@@ -209,15 +210,50 @@ export async function listContacts(): Promise<ContactInfo[]> {
 // --- Redaction ---
 
 const SENSITIVE_FIELDS = ["password", "cardNumber", "cvvCode", "credentials", "privateKey", "secureNote", "TOTP"];
+const REDACTED = "••••••••";
 
-export function redactSecret(secret: Secret): Partial<Secret> {
-  const redacted = { ...secret } as Record<string, unknown>;
+function redactFields(source: object): Record<string, unknown> {
+  const redacted = { ...source } as Record<string, unknown>;
   for (const field of SENSITIVE_FIELDS) {
     if (field in redacted && redacted[field] != null) {
-      redacted[field] = "••••••••";
+      redacted[field] = REDACTED;
     }
   }
-  return redacted as Partial<Secret>;
+  // File attachments carry their content inline as a data URL: keep the
+  // file name (it identifies the attachment), redact the content.
+  const file = redacted.file as Partial<SecretFile> | null | undefined;
+  if (file && typeof file === "object" && file.data != null) {
+    redacted.file = { ...file, data: REDACTED };
+  }
+  return redacted;
+}
+
+export function redactSecret(secret: Secret): Partial<Secret> {
+  return redactFields(secret) as Partial<Secret>;
+}
+
+/**
+ * Redact a list item. The list endpoint returns full secret objects,
+ * attachments included, so list output needs the same redaction as get.
+ */
+export function redactSecretListItem(item: SecretListItem): SecretListItem {
+  return redactFields(item) as SecretListItem;
+}
+
+/**
+ * Decode a secret's file attachment. The API stores attachments as data URLs
+ * (`data:<mime>;base64,<payload>`); a data URL without `;base64` is
+ * percent-decoded.
+ */
+export function decodeSecretFile(file: SecretFile): Buffer {
+  const match = /^data:([^,]*),(.*)$/s.exec(file.data);
+  if (!match) {
+    throw new Error(`Attachment '${file.name}' is not a data URL`);
+  }
+  const [, meta, payload] = match;
+  return meta.split(";").includes("base64")
+    ? Buffer.from(payload, "base64")
+    : Buffer.from(decodeURIComponent(payload), "utf-8");
 }
 
 // --- User ---
