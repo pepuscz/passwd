@@ -57,7 +57,7 @@ You can use both together.
 | Integration | What it does | Package | Agent sees raw credentials? |
 |---|---|---|---|
 | **Secrets provider** | Resolves SecretRefs at gateway startup (API keys, tokens) | `passwd-cli` | No — gateway holds them internally |
-| **Agent skill** | Lets the agent browse vault, check TOTP, inject creds into commands | `passwd-agent-cli` | No — credentials always redacted or masked |
+| **Agent skill** | Lets the agent browse vault, check TOTP, inject creds into commands | `passwd-agent-cli` | No — credentials always redacted or masked (masking is best-effort, see below) |
 
 #### Secrets provider (gateway)
 
@@ -210,7 +210,7 @@ MCP servers that need auth headers (e.g. private APIs) can use `mcp-wrap` to res
 }
 ```
 
-Each `header=SECRET_ID:field` mapping resolves the secret field from the vault and passes it as an HTTP header to `mcp-remote`. Stdout is masked.
+Each `header=SECRET_ID:field` mapping resolves the secret field from the vault and passes it as an HTTP header to `mcp-remote` (pinned to an exact version). The values travel in environment variables that `mcp-remote` expands itself, so they never appear in a process command line. Stdout and stderr are masked. The URL must use HTTPS.
 
 ### MCP server
 
@@ -243,7 +243,7 @@ npx @passwd/passwd-agent-cli@1.6.1 list
 npx @passwd/passwd-agent-cli@1.6.1 exec --inject DB_PASS=SECRET_ID:password -- psql -h host -U app
 ```
 
-Credentials are injected as environment variables into the child process. Stdout is always masked — if the subprocess prints a secret value, it's replaced with `<concealed by passwd>`. The raw values never enter the AI context.
+Credentials are injected as environment variables into the child process. Stdout and stderr are always masked: if the subprocess prints a secret value verbatim, it's replaced with `<concealed by passwd>`, even when the value is split across several writes. Masking is best-effort, not a sandbox. It only catches the exact value, so a command that transforms it (for example `echo "$DB_PASS" | base64`) prints something the masker cannot recognize. Only inject credentials into commands you trust.
 
 ### Full CLI
 

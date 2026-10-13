@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseMapping, shellQuote, buildMcpCommand } from "../commands/mcp-wrap.js";
+import { parseMapping, buildMcpCommand, MCP_REMOTE_PACKAGE } from "../commands/mcp-wrap.js";
 
 describe("parseMapping", () => {
   it("parses standard header=SECRET_ID:field format", () => {
@@ -47,65 +47,56 @@ describe("parseMapping", () => {
   });
 });
 
-describe("shellQuote", () => {
-  it("wraps simple strings in single quotes", () => {
-    assert.equal(shellQuote("hello"), "'hello'");
-  });
-
-  it("escapes single quotes", () => {
-    assert.equal(shellQuote("it's"), "'it'\\''s'");
-  });
-
-  it("handles empty string", () => {
-    assert.equal(shellQuote(""), "''");
-  });
-
-  it("preserves special characters inside single quotes", () => {
-    assert.equal(shellQuote("$HOME & ; | `cmd`"), "'$HOME & ; | `cmd`'");
-  });
-});
-
 describe("buildMcpCommand", () => {
-  it("puts credentials in env vars, not in the command string", () => {
-    const { cmd, envVars } = buildMcpCommand(
+  it("keeps credentials out of argv and passes them as env vars", () => {
+    const { command, args, envVars } = buildMcpCommand(
       "https://mcp.example.com/mcp",
       ["x-api-key", "x-secret"],
       ["supersecretvalue123", "anothersecret456"],
     );
-    // Command must NOT contain actual credential values
-    assert.ok(!cmd.includes("supersecretvalue123"), "credential 1 must not appear in cmd");
-    assert.ok(!cmd.includes("anothersecret456"), "credential 2 must not appear in cmd");
-    // Command should reference env vars instead
-    assert.ok(cmd.includes("$_PASSWD_HDR_0"), "cmd should reference $_PASSWD_HDR_0");
-    assert.ok(cmd.includes("$_PASSWD_HDR_1"), "cmd should reference $_PASSWD_HDR_1");
-    // Env vars should contain the actual values
+    const argv = [command, ...args].join(" ");
+    assert.ok(!argv.includes("supersecretvalue123"), "credential 1 must not appear in argv");
+    assert.ok(!argv.includes("anothersecret456"), "credential 2 must not appear in argv");
     assert.equal(envVars._PASSWD_HDR_0, "supersecretvalue123");
     assert.equal(envVars._PASSWD_HDR_1, "anothersecret456");
   });
 
-  it("includes URL and header names in command", () => {
-    const { cmd } = buildMcpCommand(
+  it("passes headers as mcp-remote ${VAR} placeholders", () => {
+    const { args } = buildMcpCommand(
       "https://mcp.example.com/mcp",
-      ["x-api-key"],
-      ["secret"],
+      ["x-api-key", "x-secret"],
+      ["a", "b"],
     );
-    assert.ok(cmd.includes("mcp.example.com/mcp"), "cmd should include URL");
-    assert.ok(cmd.includes("x-api-key"), "cmd should include header name");
-    assert.ok(cmd.includes("mcp-remote"), "cmd should invoke mcp-remote");
+    assert.deepStrictEqual(args.slice(3), [
+      "--header", "x-api-key: ${_PASSWD_HDR_0}",
+      "--header", "x-secret: ${_PASSWD_HDR_1}",
+    ]);
   });
 
-  it("shell-quotes the URL", () => {
-    const { cmd } = buildMcpCommand(
-      "https://mcp.example.com/path with spaces",
-      ["h"],
-      ["v"],
-    );
-    assert.ok(cmd.includes("'https://mcp.example.com/path with spaces'"));
+  it("runs an exactly pinned mcp-remote without a shell", () => {
+    const { command, args } = buildMcpCommand("https://mcp.example.com/mcp", ["h"], ["v"]);
+    assert.equal(command, "npx");
+    assert.equal(args[0], "-y");
+    assert.equal(args[1], MCP_REMOTE_PACKAGE);
+    assert.match(MCP_REMOTE_PACKAGE, /^mcp-remote@\d+\.\d+\.\d+$/);
+  });
+
+  it("passes the URL as a single argument, unquoted", () => {
+    const { args } = buildMcpCommand("https://mcp.example.com/path with spaces", ["h"], ["v"]);
+    assert.equal(args[2], "https://mcp.example.com/path with spaces");
   });
 
   it("handles single header", () => {
-    const { cmd, envVars } = buildMcpCommand("https://u", ["h"], ["v"]);
-    assert.ok(cmd.includes("$_PASSWD_HDR_0"));
+    const { args, envVars } = buildMcpCommand("https://u", ["h"], ["v"]);
+    assert.ok(args.includes("h: ${_PASSWD_HDR_0}"));
     assert.equal(Object.keys(envVars).length, 1);
+  });
+
+  it("rejects non-HTTPS URLs", () => {
+    assert.throws(() => buildMcpCommand("http://example.com/mcp", ["h"], ["v"]), /must use HTTPS/);
+  });
+
+  it("rejects a URL that would be read as an mcp-remote option", () => {
+    assert.throws(() => buildMcpCommand("--allow-http", ["h"], ["v"]), /must use HTTPS/);
   });
 });

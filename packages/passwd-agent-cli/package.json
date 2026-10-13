@@ -9,7 +9,9 @@
   },
   "files": [
     "dist",
-    "!dist/__tests__"
+    "!dist/__tests__",
+    "src",
+    "!src/__tests__"
   ],
   "scripts": {
     "build": "tsc -b"

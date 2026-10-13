@@ -61,3 +61,6 @@ export {
   getCurrentUser,
   redactSecret,
 } from "./api.js";
+
+export { MASK, createStreamMasker, maskSecrets, pipeMasked } from "./mask.js";
+export type { StreamMasker } from "./mask.js";

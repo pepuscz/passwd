@@ -21,6 +21,27 @@ describe("requireHttps", () => {
     assert.doesNotThrow(() => requireHttps("http://127.0.0.1:8080/path", "test"));
   });
 
+  it("accepts http://[::1] for development", () => {
+    assert.doesNotThrow(() => requireHttps("http://[::1]:3000", "test"));
+  });
+
+  it("rejects look-alike hosts that only start with localhost or 127.0.0.1", () => {
+    for (const url of [
+      "http://localhost.evil.com",
+      "http://localhost.evil.com:3000/path",
+      "http://127.0.0.1.nip.io",
+      "http://localhostevil.com",
+      "http://localhost@evil.com",
+    ]) {
+      assert.throws(() => requireHttps(url, "test"), { message: /must use HTTPS/ }, url);
+    }
+  });
+
+  it("rejects strings that are not URLs", () => {
+    assert.throws(() => requireHttps("https://", "test"), { message: /must use HTTPS/ });
+    assert.throws(() => requireHttps("--flag", "test"), { message: /must use HTTPS/ });
+  });
+
   it("rejects plain HTTP URLs", () => {
     assert.throws(
       () => requireHttps("http://example.com", "MY_VAR"),

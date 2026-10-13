@@ -5,6 +5,9 @@ on:
     branches: [main]
     tags: ['v*']
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -12,9 +15,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
@@ -23,23 +28,22 @@ jobs:
       - run: npm run build
       - run: node --test packages/*/dist/__tests__/*.test.js
 
-      - name: Publish passwd-lib
-        run: npm publish --workspace packages/passwd-lib --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish passwd-mcp
-        run: npm publish --workspace packages/passwd-mcp --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish passwd-cli
-        run: npm publish --workspace packages/passwd-cli --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish passwd-agent-cli
-        run: npm publish --workspace packages/passwd-agent-cli --provenance 2>&1 | tee /tmp/pub.log || { grep -q 'previously published' /tmp/pub.log && exit 0; exit 1; }
+      # Skip a package only when npm already has this exact version. Any
+      # other failure (auth, provenance, E403) fails the job.
+      - name: Publish packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in passwd-lib passwd-mcp passwd-cli passwd-agent-cli; do
+            name=$(node -p "require('./packages/$pkg/package.json').name")
+            version=$(node -p "require('./packages/$pkg/package.json').version")
+            published=$(npm view "$name@$version" version 2>/dev/null || true)
+            if [ "$published" = "$version" ]; then
+              echo "$name@$version is already on npm, skipping"
+              continue
+            fi
+            npm publish --workspace "packages/$pkg" --provenance
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -47,11 +51,13 @@ jobs:
     runs-on: macos-latest
     needs: publish
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
 
@@ -62,7 +68,7 @@ jobs:
         run: bash packages/passwd-mcpb/build.sh
 
       - name: Upload .mcpb artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: passwd.mcpb
           path: packages/passwd-mcpb/passwd.mcpb
@@ -75,11 +81,21 @@ jobs:
       contents: write
     steps:
       - name: Download .mcpb artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: passwd.mcpb
 
+      # gh is preinstalled on the runner, so no third-party action needs
+      # contents: write.
       - name: Attach .mcpb to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: passwd.mcpb
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --generate-notes
+          fi
+          gh release upload "$TAG" passwd.mcpb --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}

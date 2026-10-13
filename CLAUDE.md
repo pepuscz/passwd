@@ -73,10 +73,10 @@ Run `npm test` before every commit. Integration tests before release.
 3. `npm run build` — verify it compiles
 4. `npm test` — run unit tests. **All must pass.**
 5. `PASSWD_ORIGIN=https://ackee-be-dev.passwd.team npm run test:integration` — run integration tests against the dev deployment. **All must pass** (skips are OK). Do not release if any test fails.
-7. Commit, push — GitHub Action auto-publishes all four npm packages on push to main
-8. `gh release create vX.Y.Z --title "vX.Y.Z — Short label"` — this creates a tag, which triggers a second CI run that builds `.mcpb` on macOS and attaches it to the release. Title must be ≤25 chars. Format: `vX.Y.Z — Two-three words`.
-9. Wait for CI — check `gh run list` to confirm all three jobs pass: `publish` (npm), `build-mcpb` (macOS build), `release-mcpb` (attaches `.mcpb` to release)
-10. Verify: `gh release view vX.Y.Z` should show `passwd.mcpb` as an asset
+6. Commit, push — GitHub Action auto-publishes all four npm packages on push to main
+7. `gh release create vX.Y.Z --title "vX.Y.Z — Short label" --generate-notes` — this creates a tag, which triggers a second CI run that builds `.mcpb` on macOS and attaches it to the release. Title must be ≤25 chars. Format: `vX.Y.Z — Two-three words`.
+8. Wait for CI — check `gh run list` to confirm all three jobs pass: `publish` (npm), `build-mcpb` (macOS build), `release-mcpb` (attaches `.mcpb` to release)
+9. Verify: `gh release view vX.Y.Z` should show `passwd.mcpb` as an asset
 
 **Important**: The `.mcpb` is NOT committed to git (it's in `.gitignore`). It's built by CI on macOS and attached to the GitHub release. Users download it from the releases page.
 

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { getSecret } from "@passwd/passwd-lib";
+import { getSecret, pipeMasked, requireHttps } from "@passwd/passwd-lib";
 
 interface HeaderMapping {
   headerName: string;
@@ -25,29 +25,39 @@ export function parseMapping(spec: string): HeaderMapping {
   };
 }
 
-/** Escape a string for safe inclusion in a single-quoted shell argument. */
-export function shellQuote(s: string): string {
-  return "'" + s.replaceAll("'", "'\\''") + "'";
-}
+/**
+ * mcp-remote is pinned to an exact version: it runs with vault secrets in its
+ * environment, so it must not float to whatever is latest on npm.
+ */
+export const MCP_REMOTE_PACKAGE = "mcp-remote@0.14.3";
 
 /**
- * Build the bash command and env vars for mcp-wrap.
- * Credentials go into env vars (_PASSWD_HDR_N), not into the command string.
+ * Build the mcp-remote invocation and env vars for mcp-wrap.
+ * Credentials go into env vars (_PASSWD_HDR_N). The header arguments only
+ * carry `${_PASSWD_HDR_N}` placeholders, which mcp-remote expands from its
+ * own environment, so the values never appear in any process's argv.
+ * No shell is involved, so the URL and header names need no quoting. The
+ * URL must be HTTPS (or local http), which also stops it from being read as
+ * an mcp-remote option.
  */
 export function buildMcpCommand(
   url: string,
   headerNames: string[],
   secretValues: string[],
-): { cmd: string; envVars: Record<string, string> } {
+): { command: string; args: string[]; envVars: Record<string, string> } {
+  requireHttps(url, "mcp-wrap URL");
   const envVars: Record<string, string> = {};
-  const headerParts: string[] = [];
+  const headerArgs: string[] = [];
   for (let i = 0; i < headerNames.length; i++) {
     const envVar = `_PASSWD_HDR_${i}`;
     envVars[envVar] = secretValues[i];
-    headerParts.push(`--header ${shellQuote(headerNames[i] + ": ")}"\$${envVar}"`);
+    headerArgs.push("--header", `${headerNames[i]}: \${${envVar}}`);
   }
-  const cmd = `npx -y mcp-remote ${shellQuote(url)} ${headerParts.join(" ")}`;
-  return { cmd, envVars };
+  return {
+    command: "npx",
+    args: ["-y", MCP_REMOTE_PACKAGE, url, ...headerArgs],
+    envVars,
+  };
 }
 
 export async function mcpWrapCommand(
@@ -69,28 +79,20 @@ export async function mcpWrapCommand(
     secretValues.push(String(value));
   }
 
-  const { cmd, envVars } = buildMcpCommand(url, headerNames, secretValues);
+  const { command, args, envVars } = buildMcpCommand(url, headerNames, secretValues);
 
   const env: Record<string, string> = { ...process.env, ...envVars } as Record<string, string>;
   delete env.PASSWD_ORIGIN;
   delete env.PASSWD_API_URL;
   delete env.PASSWD_CLIENT_ID;
 
-  const child = spawn("bash", ["-c", cmd], {
+  const child = spawn(command, args, {
     env,
     stdio: ["inherit", "pipe", "pipe"],
   });
 
-  const mask = (chunk: Buffer): Buffer => {
-    let str = chunk.toString();
-    for (const v of secretValues) {
-      str = str.replaceAll(v, "<concealed by passwd>");
-    }
-    return Buffer.from(str);
-  };
-
-  child.stdout?.on("data", (chunk: Buffer) => process.stdout.write(mask(chunk)));
-  child.stderr?.on("data", (chunk: Buffer) => process.stderr.write(mask(chunk)));
+  pipeMasked(child.stdout, process.stdout, secretValues);
+  pipeMasked(child.stderr, process.stderr, secretValues);
 
   child.on("close", (code) => {
     process.exitCode = code ?? 1;

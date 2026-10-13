@@ -149,12 +149,24 @@ async function getEncryptionKey(): Promise<Buffer | null> {
   return _encryptionKey;
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Parse a URL, returning null instead of throwing (URL.parse needs Node >= 22.1). */
+function parseUrl(url: string): URL | null {
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
 export function requireHttps(url: string, label: string): void {
-  if (
-    !url.startsWith("https://") &&
-    !url.startsWith("http://localhost") &&
-    !url.startsWith("http://127.0.0.1")
-  ) {
+  const parsed = parseUrl(url);
+  const allowed =
+    parsed !== null &&
+    (parsed.protocol === "https:" ||
+      (parsed.protocol === "http:" && LOOPBACK_HOSTS.has(parsed.hostname)));
+  if (!allowed) {
     throw new Error(
       `${label} must use HTTPS (or http://localhost for development), got: ${url}`
     );

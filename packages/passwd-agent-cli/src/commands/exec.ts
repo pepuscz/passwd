@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { getSecret } from "@passwd/passwd-lib";
+import { getSecret, pipeMasked } from "@passwd/passwd-lib";
 import { parseInjection } from "../util/parse-injection.js";
 
 export async function execCommand(
@@ -45,16 +45,8 @@ export async function execCommand(
     stdio: ["inherit", "pipe", "pipe"],
   });
 
-  const mask = (chunk: Buffer): Buffer => {
-    let str = chunk.toString();
-    for (const v of secretValues) {
-      str = str.replaceAll(v, "<concealed by passwd>");
-    }
-    return Buffer.from(str);
-  };
-
-  child.stdout?.on("data", (chunk: Buffer) => process.stdout.write(mask(chunk)));
-  child.stderr?.on("data", (chunk: Buffer) => process.stderr.write(mask(chunk)));
+  pipeMasked(child.stdout, process.stdout, secretValues);
+  pipeMasked(child.stderr, process.stderr, secretValues);
 
   child.on("close", (code) => {
     process.exitCode = code ?? 1;

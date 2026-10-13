@@ -42,6 +42,25 @@ async function detectBackend(): Promise<Backend> {
   return _backend;
 }
 
+function securityQuote(arg: string): string {
+  if (/[\r\n\0]/.test(arg)) {
+    throw new Error("Keychain arguments must not contain line breaks or NUL characters");
+  }
+  return `"${arg.replace(/[\\"]/g, "\\$&")}"`;
+}
+
+/**
+ * Build the `security -i` input line that stores a generic password. The
+ * value travels over stdin instead of argv, so it never shows up in the
+ * process list.
+ */
+export function securityAddCommand(service: string, account: string, value: string): string {
+  const args = ["-s", service, "-a", account, "-w", value].map((a, i) =>
+    i % 2 === 0 ? a : securityQuote(a),
+  );
+  return `add-generic-password ${args.join(" ")} -U\n`;
+}
+
 export async function isKeychainAvailable(): Promise<boolean> {
   return (await detectBackend()) !== "none";
 }
@@ -51,13 +70,8 @@ export async function keychainSave(account: string, value: string): Promise<bool
   if (backend === "none") return false;
   try {
     if (backend === "security") {
-      await run("security", [
-        "add-generic-password",
-        "-s", SERVICE,
-        "-a", account,
-        "-w", value,
-        "-U",
-      ]);
+      // `security -i` reads the command from stdin (no process list exposure)
+      await run("security", ["-i"], securityAddCommand(SERVICE, account, value));
     } else {
       // secret-tool reads the value from stdin (no process list exposure)
       await run("secret-tool", [
